@@ -4,7 +4,7 @@ import path from "path";
 
 import fs from "fs";
 import { pathToFileURL } from "url";
-import { app, dialog, Menu, net, protocol, shell } from "electron";
+import { app, dialog, Menu, net, protocol, session, shell } from "electron";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 
 import * as Sentry from "@sentry/electron/main";
@@ -173,6 +173,30 @@ void app.whenReady().then(() => {
     }
     return net.fetch(pathToFileURL(pathToServe).toString());
   });
+});
+
+// 信頼できるオリジン（開発サーバーまたは app プロトコル）からのセッション権限リクエストのみ許可し、それ以外は拒否
+void app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback, { requestingUrl }) => {
+      const parsedUrl = new URL(webContents.getURL());
+      const parsedRequestingUrl = new URL(requestingUrl);
+      let isAllowedResource: boolean;
+      if (
+        isDevelopment &&
+        import.meta.env.VITE_DEV_SERVER_URL != undefined
+      ) {
+        const { origin } = new URL(import.meta.env.VITE_DEV_SERVER_URL);
+        isAllowedResource =
+          parsedUrl.origin === origin && parsedRequestingUrl.origin === origin;
+      } else {
+        isAllowedResource =
+          parsedUrl.protocol === "app:" &&
+          parsedRequestingUrl.protocol === "app:";
+      }
+      return callback(isAllowedResource);
+    },
+  );
 });
 
 // engine
