@@ -531,6 +531,7 @@ const getParameterLabel = (sliderKey: PresetSliderKey): string => {
     justify-content: flex-end;
     padding: 16px;
     padding-top: 14px;
+    padding-bottom: 14px;
     height: 66px;
     border-top: 2px solid var(--color-splitter);
   }

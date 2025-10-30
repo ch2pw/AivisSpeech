@@ -49,24 +49,24 @@
           <div v-if="activeAivmInfo && !isInstalling" class="model-detail" style="width: 100%;">
             <!-- タブは複数の話者がモデルに含まれる場合のみ表示する -->
             <QTabs v-if="activeAivmInfo && activeAivmInfo.manifest.speakers.length > 1" v-model="activeSpeakerIndex"
-              dense activeColor="primary" @update:modelValue="stopAllAudio">
+              dense activeColor="primary" class="scrollable-tabs" @update:modelValue="stopAllAudio">
               <QTab v-for="(speaker, index) of activeAivmInfo.manifest.speakers" :key="speaker.uuid" :name="index"
-                style="text-transform: none !important;">
+                style="text-transform: none !important; white-space: nowrap;">
                 話者{{ index + 1 }} ({{ speaker.name }})
               </QTab>
             </QTabs>
             <QTabPanels v-model="activeSpeakerIndex" class="bg-background">
               <QTabPanel v-for="(speaker, index) of activeAivmInfo.manifest.speakers" :key="speaker.uuid" :name="index">
                 <div class="model-detail-content" :class="{'model-detail-content--multi-speaker': activeAivmInfo.manifest.speakers.length >= 2}">
-                  <div class="q-mt-sm row items-center">
-                    <div class="col-auto" style="font-size: 20px; font-weight: bold;">
+                  <div class="q-mt-sm row items-center model-title-row">
+                    <div class="col-12 col-md model-title-text">
                       <span>{{ activeAivmInfo.manifest.name }}</span>
                       <!-- 音声合成モデル名と現在の話者名が異なる場合のみ、話者名を追加する -->
                       <span v-if="activeAivmInfo.manifest.name !== speaker.name">
                         - {{ speaker.name }}
                       </span>
                     </div>
-                    <div class="col-auto q-ml-auto" style="font-size: 13.5px; color: #D2D3D4;">
+                    <div class="col-12 col-md-auto q-ml-auto q-mt-xs q-mt-md-none model-version-text">
                       <span>Version {{ activeAivmInfo.manifest.version }}</span>
                       <!-- プライベートモデルでない場合は AivisHub へのリンクを表示 -->
                       <a v-if="!activeAivmInfo.isPrivateModel"
@@ -179,16 +179,18 @@
                 </div>
                 <div class="fixed-bottom-buttons">
                   <QSpace />
-                  <QBtn v-if="activeAivmInfo.isUpdateAvailable" outline icon="sym_r_update"
-                    label="アップデート" textColor="primary" class="text-no-wrap text-bold q-mr-sm"
-                    @click="updateAivmModel" />
-                  <QBtn outline :icon="activeAivmInfo.isLoaded ? 'sym_r_power_off' : 'sym_r_power'"
-                    :label="activeAivmInfo.isLoaded ? 'モデルをアンロード' : 'モデルをロード'"
-                    :textColor="activeAivmInfo.isLoaded ? 'power-off' : 'power-on'"
-                    class="text-no-wrap text-bold q-mr-sm"
-                    @click="toggleModelLoad" />
-                  <QBtn outline icon="sym_r_delete" label="アンインストール" textColor="warning" class="text-no-wrap text-bold"
-                    @click="unInstallAivmModel" />
+                  <div class="button-group">
+                    <QBtn v-if="activeAivmInfo.isUpdateAvailable" outline icon="sym_r_update"
+                      label="アップデート" textColor="primary" class="text-no-wrap text-bold q-mr-sm"
+                      @click="updateAivmModel" />
+                    <QBtn outline :icon="activeAivmInfo.isLoaded ? 'sym_r_power_off' : 'sym_r_power'"
+                      :label="activeAivmInfo.isLoaded ? 'モデルをアンロード' : 'モデルをロード'"
+                      :textColor="activeAivmInfo.isLoaded ? 'power-off' : 'power-on'"
+                      class="text-no-wrap text-bold q-mr-sm"
+                      @click="toggleModelLoad" />
+                    <QBtn outline icon="sym_r_delete" label="アンインストール" textColor="warning" class="text-no-wrap text-bold"
+                      @click="unInstallAivmModel" />
+                  </div>
                 </div>
               </QTabPanel>
             </QTabPanels>
@@ -749,6 +751,9 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
 
 .model-detail {
   user-select: text;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   .q-tab-panel {
     padding: 0 !important;
@@ -761,6 +766,7 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
     );
     padding: 16px;
     overflow-y: auto;
+    flex: 1 1 auto;
 
     &--multi-speaker {
       height: calc(
@@ -775,8 +781,58 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
     justify-content: flex-end;
     padding: 16px;
     padding-top: 14px;
-    height: 66px;
+    padding-bottom: 14px;
+    min-height: 66px;
     border-top: 2px solid var(--color-splitter);
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+.scrollable-tabs {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+
+  :deep(.q-tabs__content) {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  :deep(.q-tab) {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+.model-title-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.model-title-text {
+  font-size: 20px;
+  font-weight: bold;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.model-version-text {
+  font-size: 13.5px;
+  color: #D2D3D4;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 1023px) {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 }
 
