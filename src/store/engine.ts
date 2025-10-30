@@ -265,13 +265,15 @@ export const engineStore = createPartialStore<EngineStoreTypes>({
           await actions.LOAD_DEFAULT_STYLE_IDS();
           await actions.CREATE_ALL_DEFAULT_PRESET();
           // 新しくインストールされた音声合成モデル内話者の UUID が userCharacterOrder にまだ登録されていない場合、
-          // CharacterButton 内メニューで新しい話者が一番上に表示されて煩わしいため、ここで新しい話者の UUID を userCharacterOrder の末尾に登録する
+          // CharacterButton 内メニューで新しい話者が一番上に表示されて煩わしいため、新規の話者を userCharacterOrder に統合する
+          // この際、デフォルトモデルに属する話者は userCharacterOrder の先頭へ追加する
           // VOICEVOX では新しいキャラクターがいる場合は常に CharacterOrderDialog が開かれ、そこを閉じた際に新しいキャラクターの
           // 並び替え情報が登録されるため問題にならなかったが、AivisSpeech では追加キャラクター表示を行わないため、明示的にこの処理が必要になる
           const newCharacters = await actions.GET_NEW_CHARACTERS();
           if (newCharacters.length > 0) {
-            const newUserCharacterOrder = [...state.userCharacterOrder, ...newCharacters];
-            await actions.SET_USER_CHARACTER_ORDER(newUserCharacterOrder);
+            await actions.MERGE_NEW_CHARACTERS_INTO_USER_CHARACTER_ORDER({
+              newCharacters,
+            });
           }
           const result = {
             success: state.engineStates[engineId] === "READY",

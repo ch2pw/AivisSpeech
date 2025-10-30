@@ -37,6 +37,7 @@ import { proxyStore, proxyStoreState } from "./proxy";
 import { createPartialStore } from "./vuex";
 import { engineStoreState, engineStore } from "./engine";
 import { filterCharacterInfosByStyleType } from "./utility";
+import type { AivmInfo } from "@/openapi";
 import {
   DefaultStyleId,
   EngineId,
@@ -315,6 +316,69 @@ export const indexStore = createPartialStore<IndexStoreTypes>({
         (speakerUuid) => !state.userCharacterOrder.includes(speakerUuid),
       );
       return newSpeakerUuid;
+    },
+  },
+
+  /**
+   * userCharacterOrder に新規の話者を統合する。
+   * 設定に未登録のデフォルトモデルの話者は先頭へ追加し、その他の話者は従来どおり末尾へ追加する。
+   */
+  MERGE_NEW_CHARACTERS_INTO_USER_CHARACTER_ORDER: {
+    async action(
+      { state, getters, actions },
+      { newCharacters }: { newCharacters: SpeakerId[] },
+    ) {
+      if (newCharacters.length === 0) {
+        return;
+      }
+
+      // デフォルトモデルの話者 UUID リストを取得
+      let defaultModelSpeakerUuids: SpeakerId[] = [];
+      try {
+        const defaultEngineId = getters.DEFAULT_ENGINE_ID;
+        if (defaultEngineId !== "" && defaultEngineId != undefined) {
+          const instance = await actions.INSTANTIATE_ENGINE_CONNECTOR({
+            engineId: defaultEngineId,
+          });
+          const installedAivmInfos = await instance.invoke("getInstalledAivmInfos")({}) as Record<string, AivmInfo>;
+          defaultModelSpeakerUuids = Object.values(installedAivmInfos)
+            .filter((aivmInfo) => aivmInfo.isDefaultModel === true)
+            .flatMap((aivmInfo) =>
+              aivmInfo.manifest.speakers.map((speaker) => SpeakerId(speaker.uuid)),
+            );
+        }
+      } catch {
+        defaultModelSpeakerUuids = [];
+      }
+
+      // デフォルトモデルに属する新規話者については、API から返された際の順序をそのまま維持する
+      const defaultNewCharacters = defaultModelSpeakerUuids.filter((speakerUuid) =>
+        newCharacters.includes(speakerUuid),
+      );
+      const nonDefaultNewCharacters = newCharacters.filter(
+        (speakerUuid) => !defaultNewCharacters.includes(speakerUuid),
+      );
+
+      // userCharacterOrder にデフォルトモデルに属する新規話者を先頭に追加し、その他の新規話者を末尾に追加する
+      const mergedOrderCandidates: SpeakerId[] = [
+        ...defaultNewCharacters,
+        ...state.userCharacterOrder,
+        ...nonDefaultNewCharacters,
+      ];
+      const deduplicatedOrder = mergedOrderCandidates.filter(
+        (speakerUuid, index) =>
+          mergedOrderCandidates.indexOf(speakerUuid) === index,
+      );
+
+      // userCharacterOrder に変更があった場合は、その変更を反映する
+      const isOrderChanged =
+        deduplicatedOrder.length !== state.userCharacterOrder.length ||
+        deduplicatedOrder.some(
+          (speakerUuid, index) => speakerUuid !== state.userCharacterOrder[index],
+        );
+      if (isOrderChanged) {
+        await actions.SET_USER_CHARACTER_ORDER(deduplicatedOrder);
+      }
     },
   },
 

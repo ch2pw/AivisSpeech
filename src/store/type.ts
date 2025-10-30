@@ -1851,6 +1851,10 @@ export type IndexStoreTypes = {
     action(): SpeakerId[];
   };
 
+  MERGE_NEW_CHARACTERS_INTO_USER_CHARACTER_ORDER: {
+    action(payload: { newCharacters: SpeakerId[] }): Promise<void>;
+  };
+
   INIT_VUEX: {
     action(): void;
   };
