@@ -92,14 +92,50 @@
                       {{ speaker.styles.map(style => style.name).join(' / ') }}
                     </div>
                   </div>
-                  <div class="row items-center" style="margin-top: 12px; font-size: 12.5px; color: #D2D3D4;">
+                  <div class="row no-wrap items-center" style="margin-top: 12px; font-size: 12.5px; color: #D2D3D4;">
+                    <QIcon style="margin-right: 4px;" name="sym_r_fingerprint" /> Model UUID: {{ activeAivmInfo.manifest.uuid }}
+                    <QBtn
+                      flat
+                      round
+                      dense
+                      icon="sym_r_content_copy"
+                      size="sm"
+                      style="margin-left: 2px;"
+                      @click="copyModelUuid"
+                    />
+                  </div>
+                  <div class="row no-wrap items-center" style="margin-top: 4px; font-size: 12.5px; color: #D2D3D4;">
                     <QIcon style="margin-right: 4px;" name="sym_r_manufacturing" /> Model Architecture: {{ activeAivmInfo.manifest.modelArchitecture }}
                     <QIcon style="margin-right: 4px; margin-left: 12px;" name="sym_r_description" /> Model Format: {{ activeAivmInfo.manifest.modelFormat }}
                   </div>
-                  <div class="row items-center" style="margin-top: 4px; font-size: 12.5px; color: #D2D3D4;">
-                    <QIcon style="margin-right: 4px;" name="sym_r_person" />
-                    {{ activeAivmInfo.manifest.creators!.length >= 2 ? 'Creators: ' : 'Creator: ' }}
-                    {{ activeAivmInfo.manifest.creators!.length >= 1 ? activeAivmInfo.manifest.creators!.join(' / ') : '不明' }}
+                  <div class="row no-wrap items-center details-creators" style="margin-top: 4px; font-size: 12.5px; color: #D2D3D4;">
+                    <QIcon style="margin-right: 4px; flex-shrink: 0;" name="sym_r_person" />
+                    <span v-if="parsedCreators.length === 0">
+                      Creator: 不明
+                    </span>
+                    <template v-else>
+                      <span v-if="parsedCreators.length >= 2" style="margin-right: 4px;">Creators:</span>
+                      <span v-else style="margin-right: 4px;">Creator:</span>
+                      <template v-for="(parsedCreator, creatorIndex) in parsedCreators" :key="`creator-${creatorIndex}`">
+                        <span class="details-creators-item">
+                          <a v-if="parsedCreator.url || parsedCreator.email" :href="parsedCreator.url || `mailto:${parsedCreator.email}`" target="_blank" rel="noopener noreferrer">
+                            {{ parsedCreator.name }}
+                          </a>
+                          <template v-else>{{ parsedCreator.name }}</template>
+                          <a
+                            v-if="parsedCreator.email && parsedCreator.url"
+                            :href="`mailto:${parsedCreator.email}`"
+                            class="details-creators-mail"
+                            :aria-label="`${parsedCreator.name} にメールを送る`"
+                          >
+                            <QIcon name="sym_r_mail" size="14px" />
+                          </a>
+                        </span>
+                        <span v-if="creatorIndex < parsedCreators.length - 1" class="details-creators-separator" aria-hidden="true">
+                          /
+                        </span>
+                      </template>
+                    </template>
                   </div>
                   <div class="q-mt-md" style="font-size: 13.5px; color: #D2D3D4; white-space: pre-wrap; word-wrap: break-word; line-height: 1.7;">
                     <span v-if="activeAivmInfo.manifest.description === ''">
@@ -294,6 +330,14 @@ const activeAivmUuid = ref<string | null>(null);
 // アクティブな音声合成モデルの情報
 const activeAivmInfo = computed(() => {
   return activeAivmUuid.value ? aivmInfoList.value.find(aivm => aivm.manifest.uuid === activeAivmUuid.value) ?? null : null;
+});
+
+// アクティブな音声合成モデルの creators をパース済みの配列として取得
+const parsedCreators = computed(() => {
+  if (!activeAivmInfo.value || !activeAivmInfo.value.manifest.creators || activeAivmInfo.value.manifest.creators.length === 0) {
+    return [];
+  }
+  return activeAivmInfo.value.manifest.creators.map(creator => parseCreator(creator));
 });
 
 // アクティブな音声合成モデルの話者タブのインデックス
@@ -588,6 +632,78 @@ const linkify = (text: string | undefined): string => {
   return result;
 };
 
+// モデル UUID をクリップボードにコピーする
+const copyModelUuid = async () => {
+  if (!activeAivmInfo.value) {
+    return;
+  }
+  const uuid = activeAivmInfo.value.manifest.uuid;
+  try {
+    await navigator.clipboard.writeText(uuid);
+    void store.actions.SHOW_NOTIFY({
+      message: "モデル UUID をクリップボードにコピーしました",
+    });
+  } catch (error) {
+    log.error(error);
+    void store.actions.SHOW_NOTIFY({
+      message: "モデル UUID のコピーに失敗しました",
+      isWarning: true,
+    });
+  }
+};
+
+/**
+ * npm package.json と同形式の制作者表記から名前・メール・URL を抽出する
+ * @param raw_creator マニフェストに記載された制作者表記
+ * @returns 解析済みの制作者情報
+ */
+interface ParsedCreator {
+  name: string;
+  email?: string;
+  url?: string;
+}
+
+// npm の package.json 形式の creator 文字列をパースするための正規表現パターン
+const CREATOR_PATTERN = /^(?<name>[^<(]+?)?(?:\s*<(?<email>[^>]+)>)?(?:\s*\((?<url>[^)]+)\))?$/;
+
+const parseCreator = (raw_creator: string): ParsedCreator => {
+  // 制作者情報を npm の author 形式から抽出し、表示用に整形する
+  const normalized = raw_creator.trim();
+  const matched = normalized.match(CREATOR_PATTERN);
+
+  if (!matched || !matched.groups) {
+    return {
+      name: normalized,
+    };
+  }
+
+  const name = matched.groups.name?.trim();
+  const email = matched.groups.email?.trim();
+  const url = matched.groups.url?.trim();
+
+  // 名前が空の場合は、メールアドレスもしくは URL を表示名として利用する
+  const display_name = name && name.length > 0
+    ? name
+    : email && email.length > 0
+      ? email
+      : url && url.length > 0
+        ? url
+        : normalized;
+
+  const parsed_creator: ParsedCreator = {
+    name: display_name,
+  };
+
+  if (email && email.length > 0) {
+    parsed_creator.email = email;
+  }
+  if (url && url.length > 0) {
+    parsed_creator.url = url;
+  }
+
+  return parsed_creator;
+};
+
 </script>
 <style lang="scss" scoped>
 
@@ -756,6 +872,36 @@ const linkify = (text: string | undefined): string => {
 .power-icon {
   margin-top: -2px;
   vertical-align: middle;
+}
+
+.details-creators {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.details-creators-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.details-creators-mail {
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s;
+
+  &:hover,
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.details-creators-separator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  margin-right: 6px;
 }
 
 :deep(a) {
