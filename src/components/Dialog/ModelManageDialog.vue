@@ -35,7 +35,9 @@
                 <QItemSection>
                   <QItemLabel class="text-display">
                     {{ aivmInfo.manifest.name }}
-                    <QIcon v-if="aivmInfo.isLoaded" name="sym_r_power" size="16px" class="power-icon text-power-on" />
+                    <QBadge v-if="aivmInfo.isDefaultModel" class="default-model-badge"
+                      style="margin-left: 6px; font-size: 9.5px; font-weight: normal;">デフォルト</QBadge>
+                    <QIcon v-if="aivmInfo.isLoaded" name="sym_r_power" size="16px" class="power-icon text-power-on" style="margin-left: 6px;" />
                   </QItemLabel>
                   <QItemLabel caption class="engine-path">
                     {{ aivmInfo.manifest.speakers.length }} Speakers / Version {{ aivmInfo.manifest.version }}
@@ -65,6 +67,8 @@
                       <span v-if="activeAivmInfo.manifest.name !== speaker.name">
                         - {{ speaker.name }}
                       </span>
+                      <QBadge v-if="activeAivmInfo.isDefaultModel" class="default-model-badge"
+                        style="margin-left: 2px; font-size: 11px; font-weight: normal;">デフォルト</QBadge>
                     </div>
                     <div class="col-12 col-md-auto q-ml-auto q-mt-xs q-mt-md-none model-version-text">
                       <span>Version {{ activeAivmInfo.manifest.version }}</span>
@@ -202,6 +206,7 @@
                       class="text-no-wrap text-bold q-mr-sm"
                       @click="toggleModelLoad" />
                     <QBtn outline icon="sym_r_delete" label="アンインストール" textColor="warning" class="text-no-wrap text-bold"
+                      :disabled="activeAivmInfo.isDefaultModel === true"
                       @click="unInstallAivmModel" />
                   </div>
                 </div>
@@ -778,6 +783,10 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
   overflow-y: auto;
 }
 
+.power-icon {
+  margin-top: -1px;
+}
+
 .text-power-on {
   color: #86df9f;
 }
@@ -854,6 +863,10 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
 }
 
 .model-title-text {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   font-size: 20px;
   font-weight: bold;
   word-break: break-word;
@@ -974,9 +987,11 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
   word-wrap: break-word;
 }
 
-.power-icon {
-  margin-top: -2px;
-  vertical-align: middle;
+.model-list :deep(.text-display) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
 }
 
 .details-creators {
@@ -1007,6 +1022,13 @@ const parseCreator = (raw_creator: string): ParsedCreator => {
   align-items: center;
   margin-left: 6px;
   margin-right: 6px;
+}
+
+.default-model-badge {
+  background-color: rgba(65, 162, 236, 0.15);
+  color: rgba(65, 162, 236, 0.85);
+  border: 1px solid rgba(65, 162, 236, 0.3);
+  padding: 2.5px 4px;
 }
 
 :deep(a) {
