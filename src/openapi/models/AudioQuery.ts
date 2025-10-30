@@ -27,7 +27,7 @@ import {
  */
 export interface AudioQuery {
     /**
-     * 
+     * アクセント句のリスト。
      * @type {Array<AccentPhrase>}
      * @memberof AudioQuery
      */
@@ -41,6 +41,7 @@ export interface AudioQuery {
     speedScale: number;
     /**
      * 選択した話者スタイルの感情表現の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * 「全体の抑揚」ではない点で VOICEVOX ENGINE と仕様が異なる。
      * 数値が大きいほど、選択した話者スタイルに近い感情表現が込められた声になる。
      * 例えば話者スタイルが「上機嫌」なら、数値が大きいほどより嬉しそうな明るい話し方になる。
      * 一方で、話者やスタイルによっては、数値を上げすぎると発声がおかしくなったり、棒読みで不自然な声になる場合もある。
@@ -51,7 +52,8 @@ export interface AudioQuery {
      */
     intonationScale: number;
     /**
-     * 話す速さの緩急の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * 話す速さ（テンポ）の緩急の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * AivisSpeech Engine 固有のフィールドで、VOICEVOX ENGINE には存在しない。
      * 数値が大きいほどより早口で生っぽい抑揚がついた声になる。
      * VOICEVOX ENGINE との互換性のため、未指定時はデフォルト値が適用される。
      * @type {number}
@@ -74,13 +76,13 @@ export interface AudioQuery {
      */
     volumeScale: number;
     /**
-     * 
+     * 音声の前の無音時間 (秒)。
      * @type {number}
      * @memberof AudioQuery
      */
     prePhonemeLength: number;
     /**
-     * 
+     * 音声の後の無音時間 (秒)。
      * @type {number}
      * @memberof AudioQuery
      */
@@ -98,19 +100,19 @@ export interface AudioQuery {
      */
     pauseLengthScale?: number;
     /**
-     * 
+     * 音声データの出力サンプリングレート。
      * @type {number}
      * @memberof AudioQuery
      */
     outputSamplingRate: number;
     /**
-     * 
+     * 音声データをステレオ出力するか否か。
      * @type {boolean}
      * @memberof AudioQuery
      */
     outputStereo: boolean;
     /**
-     * 読み上げるテキストを指定する。
+     * 読み上げるテキストを指定する。「読みの AquesTalk 風記法テキスト」ではない点で VOICEVOX ENGINE と仕様が異なる。
      * VOICEVOX ENGINE では AquesTalk 風記法テキストが入る読み取り専用フィールドだが (音声合成時には無視される) 、AivisSpeech Engine では音声合成時に漢字や記号が含まれた通常の読み上げテキストも必要なため、苦肉の策で読み上げテキスト指定用のフィールドとして転用した。
      * VOICEVOX ENGINE との互換性のため None や空文字列が指定された場合も動作するが、その場合はアクセント句から自動生成されたひらがな文字列が読み上げテキストになるため、不自然なイントネーションになってしまう。
      * 可能な限り kana に通常の読み上げテキストを指定した上で音声合成 API に渡すことを推奨する。

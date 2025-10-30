@@ -37,49 +37,55 @@ import {
  */
 export interface AivmInfo {
     /**
-     * 
+     * この音声合成モデルがロードされているかどうか
      * @type {boolean}
      * @memberof AivmInfo
      */
     isLoaded: boolean;
     /**
-     * 
+     * この音声合成モデルの新しいバージョンが AivisHub で公開されているかどうか
      * @type {boolean}
      * @memberof AivmInfo
      */
     isUpdateAvailable: boolean;
     /**
-     * 
+     * AivisHub で公開されておらず、ユーザーがローカルからインストールしたモデルの場合は True (ネットワークエラーなどで AivisHub から情報を取得できなかった場合も True を返す)
      * @type {boolean}
      * @memberof AivmInfo
      */
     isPrivateModel: boolean;
     /**
-     * 
+     * AivisHub がデフォルトインストール対象として指定した音声合成モデルかどうか
+     * @type {boolean}
+     * @memberof AivmInfo
+     */
+    isDefaultModel?: boolean;
+    /**
+     * この音声合成モデルの AivisHub で公開されている最新バージョン (AivisHub で公開されていない場合は AIVM マニフェスト記載のバージョン)
      * @type {string}
      * @memberof AivmInfo
      */
     latestVersion: string;
     /**
-     * 
+     * AIVMX ファイルのインストール先パス
      * @type {string}
      * @memberof AivmInfo
      */
     filePath: string;
     /**
-     * 
+     * AIVMX ファイルのインストールサイズ (バイト単位)
      * @type {number}
      * @memberof AivmInfo
      */
     fileSize: number;
     /**
-     * 
+     * AIVM マニフェスト
      * @type {AivmManifest}
      * @memberof AivmInfo
      */
     manifest: AivmManifest;
     /**
-     * 
+     * 話者情報のリスト (VOICEVOX ENGINE 互換)
      * @type {Array<LibrarySpeaker>}
      * @memberof AivmInfo
      */
@@ -116,6 +122,7 @@ export function AivmInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'isLoaded': json['is_loaded'],
         'isUpdateAvailable': json['is_update_available'],
         'isPrivateModel': json['is_private_model'],
+        'isDefaultModel': !exists(json, 'is_default_model') ? undefined : json['is_default_model'],
         'latestVersion': json['latest_version'],
         'filePath': json['file_path'],
         'fileSize': json['file_size'],
@@ -136,6 +143,7 @@ export function AivmInfoToJSON(value?: AivmInfo | null): any {
         'is_loaded': value.isLoaded,
         'is_update_available': value.isUpdateAvailable,
         'is_private_model': value.isPrivateModel,
+        'is_default_model': value.isDefaultModel,
         'latest_version': value.latestVersion,
         'file_path': value.filePath,
         'file_size': value.fileSize,

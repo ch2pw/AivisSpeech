@@ -129,7 +129,7 @@ export interface FrameSynthesisRequest {
 }
 
 export interface GetAivmInfoRequest {
-    aivmUuid: string;
+    aivmModelUuid: string;
 }
 
 export interface GetUserDictWordsRequest {
@@ -158,7 +158,7 @@ export interface IsInitializedSpeakerRequest {
 }
 
 export interface LoadModelRequest {
-    aivmUuid: string;
+    aivmModelUuid: string;
 }
 
 export interface MoraDataRequest {
@@ -253,15 +253,15 @@ export interface SynthesisMorphingRequest {
 }
 
 export interface UninstallModelRequest {
-    aivmUuid: string;
+    aivmModelUuid: string;
 }
 
 export interface UnloadModelRequest {
-    aivmUuid: string;
+    aivmModelUuid: string;
 }
 
 export interface UpdateModelRequest {
-    aivmUuid: string;
+    aivmModelUuid: string;
 }
 
 export interface UpdatePresetRequest {
@@ -494,7 +494,7 @@ export interface DefaultApiInterface {
     /**
      * 指定された音声合成モデルの情報を取得します。
      * @summary 指定された音声合成モデルの情報を取得する
-     * @param {string} aivmUuid 音声合成モデルの UUID
+     * @param {string} aivmModelUuid AIVM マニフェスト記載の音声合成モデルの UUID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApiInterface
@@ -640,7 +640,7 @@ export interface DefaultApiInterface {
     /**
      * 指定された音声合成モデルをロードします。すでにロード済みの場合は何も行われません。<br> 実行しなくても他の API は利用できますが、音声合成の初回実行時に時間がかかることがあります。
      * @summary 指定された音声合成モデルをロードする
-     * @param {string} aivmUuid 音声合成モデルの UUID
+     * @param {string} aivmModelUuid AIVM マニフェスト記載の音声合成モデルの UUID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApiInterface
@@ -945,7 +945,7 @@ export interface DefaultApiInterface {
     /**
      * 指定された音声合成モデルをアンインストールします。
      * @summary 指定された音声合成モデルをアンインストールする
-     * @param {string} aivmUuid 音声合成モデルの UUID
+     * @param {string} aivmModelUuid AIVM マニフェスト記載の音声合成モデルの UUID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApiInterface
@@ -961,7 +961,7 @@ export interface DefaultApiInterface {
     /**
      * 指定された音声合成モデルをアンロードします。
      * @summary 指定された音声合成モデルをアンロードする
-     * @param {string} aivmUuid 音声合成モデルの UUID
+     * @param {string} aivmModelUuid AIVM マニフェスト記載の音声合成モデルの UUID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApiInterface
@@ -977,7 +977,7 @@ export interface DefaultApiInterface {
     /**
      * AivisHub から指定された音声合成モデルの一番新しいバージョンをダウンロードし、 インストール済みの音声合成モデルへ上書き更新します。
      * @summary 指定された音声合成モデルを更新する
-     * @param {string} aivmUuid 音声合成モデルの UUID
+     * @param {string} aivmModelUuid AIVM マニフェスト記載の音声合成モデルの UUID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApiInterface
@@ -1568,8 +1568,8 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
      * 指定された音声合成モデルの情報を取得する
      */
     async getAivmInfoRaw(requestParameters: GetAivmInfoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AivmInfo>> {
-        if (requestParameters.aivmUuid === null || requestParameters.aivmUuid === undefined) {
-            throw new runtime.RequiredError('aivmUuid','Required parameter requestParameters.aivmUuid was null or undefined when calling getAivmInfo.');
+        if (requestParameters.aivmModelUuid === null || requestParameters.aivmModelUuid === undefined) {
+            throw new runtime.RequiredError('aivmModelUuid','Required parameter requestParameters.aivmModelUuid was null or undefined when calling getAivmInfo.');
         }
 
         const queryParameters: any = {};
@@ -1577,7 +1577,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/aivm_models/{aivm_uuid}`.replace(`{${"aivm_uuid"}}`, encodeURIComponent(String(requestParameters.aivmUuid))),
+            path: `/aivm_models/{aivm_model_uuid}`.replace(`{${"aivm_model_uuid"}}`, encodeURIComponent(String(requestParameters.aivmModelUuid))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1901,8 +1901,8 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
      * 指定された音声合成モデルをロードする
      */
     async loadModelRaw(requestParameters: LoadModelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.aivmUuid === null || requestParameters.aivmUuid === undefined) {
-            throw new runtime.RequiredError('aivmUuid','Required parameter requestParameters.aivmUuid was null or undefined when calling loadModel.');
+        if (requestParameters.aivmModelUuid === null || requestParameters.aivmModelUuid === undefined) {
+            throw new runtime.RequiredError('aivmModelUuid','Required parameter requestParameters.aivmModelUuid was null or undefined when calling loadModel.');
         }
 
         const queryParameters: any = {};
@@ -1910,7 +1910,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/aivm_models/{aivm_uuid}/load`.replace(`{${"aivm_uuid"}}`, encodeURIComponent(String(requestParameters.aivmUuid))),
+            path: `/aivm_models/{aivm_model_uuid}/load`.replace(`{${"aivm_model_uuid"}}`, encodeURIComponent(String(requestParameters.aivmModelUuid))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -2661,8 +2661,8 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
      * 指定された音声合成モデルをアンインストールする
      */
     async uninstallModelRaw(requestParameters: UninstallModelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.aivmUuid === null || requestParameters.aivmUuid === undefined) {
-            throw new runtime.RequiredError('aivmUuid','Required parameter requestParameters.aivmUuid was null or undefined when calling uninstallModel.');
+        if (requestParameters.aivmModelUuid === null || requestParameters.aivmModelUuid === undefined) {
+            throw new runtime.RequiredError('aivmModelUuid','Required parameter requestParameters.aivmModelUuid was null or undefined when calling uninstallModel.');
         }
 
         const queryParameters: any = {};
@@ -2670,7 +2670,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/aivm_models/{aivm_uuid}/uninstall`.replace(`{${"aivm_uuid"}}`, encodeURIComponent(String(requestParameters.aivmUuid))),
+            path: `/aivm_models/{aivm_model_uuid}/uninstall`.replace(`{${"aivm_model_uuid"}}`, encodeURIComponent(String(requestParameters.aivmModelUuid))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2692,8 +2692,8 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
      * 指定された音声合成モデルをアンロードする
      */
     async unloadModelRaw(requestParameters: UnloadModelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.aivmUuid === null || requestParameters.aivmUuid === undefined) {
-            throw new runtime.RequiredError('aivmUuid','Required parameter requestParameters.aivmUuid was null or undefined when calling unloadModel.');
+        if (requestParameters.aivmModelUuid === null || requestParameters.aivmModelUuid === undefined) {
+            throw new runtime.RequiredError('aivmModelUuid','Required parameter requestParameters.aivmModelUuid was null or undefined when calling unloadModel.');
         }
 
         const queryParameters: any = {};
@@ -2701,7 +2701,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/aivm_models/{aivm_uuid}/unload`.replace(`{${"aivm_uuid"}}`, encodeURIComponent(String(requestParameters.aivmUuid))),
+            path: `/aivm_models/{aivm_model_uuid}/unload`.replace(`{${"aivm_model_uuid"}}`, encodeURIComponent(String(requestParameters.aivmModelUuid))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -2723,8 +2723,8 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
      * 指定された音声合成モデルを更新する
      */
     async updateModelRaw(requestParameters: UpdateModelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.aivmUuid === null || requestParameters.aivmUuid === undefined) {
-            throw new runtime.RequiredError('aivmUuid','Required parameter requestParameters.aivmUuid was null or undefined when calling updateModel.');
+        if (requestParameters.aivmModelUuid === null || requestParameters.aivmModelUuid === undefined) {
+            throw new runtime.RequiredError('aivmModelUuid','Required parameter requestParameters.aivmModelUuid was null or undefined when calling updateModel.');
         }
 
         const queryParameters: any = {};
@@ -2732,7 +2732,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/aivm_models/{aivm_uuid}/update`.replace(`{${"aivm_uuid"}}`, encodeURIComponent(String(requestParameters.aivmUuid))),
+            path: `/aivm_models/{aivm_model_uuid}/update`.replace(`{${"aivm_model_uuid"}}`, encodeURIComponent(String(requestParameters.aivmModelUuid))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,

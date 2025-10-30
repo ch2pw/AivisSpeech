@@ -20,25 +20,25 @@ import { exists, mapValues } from '../runtime';
  */
 export interface Preset {
     /**
-     * 
+     * プリセット ID 。
      * @type {number}
      * @memberof Preset
      */
     id: number;
     /**
-     * 
+     * プリセット名。
      * @type {string}
      * @memberof Preset
      */
     name: string;
     /**
-     * 
+     * キャラクターの UUID 。
      * @type {string}
      * @memberof Preset
      */
     speakerUuid: string;
     /**
-     * 
+     * スタイル ID 。
      * @type {number}
      * @memberof Preset
      */
@@ -52,6 +52,7 @@ export interface Preset {
     speedScale: number;
     /**
      * 選択した話者スタイルの感情表現の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * 「全体の抑揚」ではない点で VOICEVOX ENGINE と仕様が異なる。
      * 数値が大きいほど、選択した話者スタイルに近い感情表現が込められた声になる。
      * 例えば話者スタイルが「上機嫌」なら、数値が大きいほどより嬉しそうな明るい話し方になる。
      * 一方で、話者やスタイルによっては、数値を上げすぎると発声がおかしくなったり、棒読みで不自然な声になる場合もある。
@@ -62,7 +63,8 @@ export interface Preset {
      */
     intonationScale: number;
     /**
-     * 話す速さの緩急の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * 話す速さ（テンポ）の緩急の強弱を 0.0 ~ 2.0 の範囲で指定する (デフォルト: 1.0) 。
+     * AivisSpeech Engine 固有のフィールドで、VOICEVOX ENGINE には存在しない。
      * 数値が大きいほどより早口で生っぽい抑揚がついた声になる。
      * VOICEVOX ENGINE との互換性のため、未指定時はデフォルト値が適用される。
      * @type {number}
@@ -85,13 +87,13 @@ export interface Preset {
      */
     volumeScale: number;
     /**
-     * 
+     * 音声の前の無音時間 (秒)。
      * @type {number}
      * @memberof Preset
      */
     prePhonemeLength: number;
     /**
-     * 
+     * 音声の後の無音時間 (秒)。
      * @type {number}
      * @memberof Preset
      */

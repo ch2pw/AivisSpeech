@@ -28,7 +28,7 @@ export interface Mora {
      */
     text: string;
     /**
-     * 
+     * 子音の音素。
      * @type {string}
      * @memberof Mora
      */
@@ -41,7 +41,7 @@ export interface Mora {
      */
     consonantLength?: number;
     /**
-     * 
+     * 母音の音素。
      * @type {string}
      * @memberof Mora
      */
