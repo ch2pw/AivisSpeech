@@ -301,7 +301,7 @@ app.on("web-contents-created", (_e, contents) => {
   // リンククリック時はブラウザを開く
   contents.setWindowOpenHandler(({ url }) => {
     const { protocol } = new URL(url);
-    if (protocol.match(/^https?:/)) {
+    if (protocol.match(/^https?:/) || protocol === "mailto:") {
       void shell.openExternal(url);
     } else {
       log.error(`許可されないリンクです。url: ${url}`);

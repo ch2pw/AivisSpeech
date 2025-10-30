@@ -11,7 +11,7 @@
               音声合成モデルの管理 <span class="q-ml-sm text-caption">合計 {{ aivmCount }} モデル</span>
             </QToolbarTitle>
             <QBtn outline icon="sym_r_search" label="音声合成モデルを探す" textColor="display"
-              class="text-bold q-mr-sm" @click="openExternalLink" />
+              class="text-bold q-mr-sm" @click="openExternalUrl('https://hub.aivis-project.com/')" />
             <QBtn outline icon="sym_r_upload" label="インストール / 更新" textColor="display" class="text-bold" @click="isInstalling = true" />
           </QToolbar>
         </QHeader>
@@ -130,7 +130,7 @@
                       <span v-else style="margin-right: 4px;">Creator:</span>
                       <template v-for="(parsedCreator, creatorIndex) in parsedCreators" :key="`creator-${creatorIndex}`">
                         <span class="details-creators-item">
-                          <a v-if="parsedCreator.url || parsedCreator.email" :href="parsedCreator.url || `mailto:${parsedCreator.email}`" target="_blank" rel="noopener noreferrer">
+                          <a v-if="parsedCreator.url || parsedCreator.email" :href="parsedCreator.url || `mailto:${parsedCreator.email}`" target="_blank" rel="noopener noreferrer" @click.prevent="openExternalUrl(parsedCreator.url || `mailto:${parsedCreator.email}`)">
                             {{ parsedCreator.name }}
                           </a>
                           <template v-else>{{ parsedCreator.name }}</template>
@@ -139,6 +139,7 @@
                             :href="`mailto:${parsedCreator.email}`"
                             class="details-creators-mail"
                             :aria-label="`${parsedCreator.name} にメールを送る`"
+                            @click.prevent="openExternalUrl(`mailto:${parsedCreator.email}`)"
                           >
                             <QIcon name="sym_r_mail" size="14px" />
                           </a>
@@ -407,9 +408,9 @@ const toggleAudio = (speakerUuid: string, styleLocalId: number, sampleIndex: num
   }
 };
 
-// 外部リンクを開く
-const openExternalLink = () => {
-  window.open("https://hub.aivis-project.com/", "_blank");
+// 外部 URL を開く（mailto: や https: など）
+const openExternalUrl = (url: string) => {
+  window.open(url, "_blank");
 };
 
 const isInstalling = ref(false);
