@@ -290,27 +290,39 @@ const aivmCount = computed(() => aivmInfoList.value.length);
 
 // インストール済み音声合成モデルの情報を取得する関数
 const getAivmInfos = async () => {
+
   // 初回のみ読み込み中のローディングを表示する
   if (aivmInfoList.value.length === 0) {
     showLoadingScreen({
       message: "読み込み中...",
     });
   }
+
+  // API を呼び出してインストール済み音声合成モデルの情報を取得する
   const res = await getApiInstance().then((instance) => instance.invoke("getInstalledAivmInfos")({}));
-  console.log(res);
   // Object.keys() の順序を保持した状態で配列に変換
   aivmInfoList.value = Object.keys(res).map(key => res[key]);
+
+  // リストが空の場合は activeAivmUuid をクリア
+  if (aivmInfoList.value.length === 0) {
+    activeAivmUuid.value = null;
+    void hideAllLoadingScreen();
+    return;
+  }
+
   // 初回のみアクティブな音声合成モデルの UUID を設定
   if (activeAivmUuid.value == null && aivmInfoList.value.length > 0) {
     activeAivmUuid.value = aivmInfoList.value[0].manifest.uuid;
   }
   // この時点で activeAivmUuid に対応する音声合成モデルが存在しない場合は (削除されたなど) 、上記同様に最初の音声合成モデルをアクティブにする
   if (activeAivmUuid.value != null && !aivmInfoList.value.some(aivm => aivm.manifest.uuid === activeAivmUuid.value)) {
-    activeAivmUuid.value = aivmInfoList.value[0].manifest.uuid;
+    if (aivmInfoList.value.length > 0) {
+      activeAivmUuid.value = aivmInfoList.value[0].manifest.uuid;
+    } else {
+      activeAivmUuid.value = null;
+    }
   }
-  if (aivmInfoList.value.length > 0) {
-    void hideAllLoadingScreen();
-  }
+  void hideAllLoadingScreen();
 };
 
 // ダイヤログが開かれた時
@@ -464,8 +476,8 @@ const installModel = async () => {
       }
     }
   } finally {
-    await getAivmInfos();  // 再取得
     hideAllLoadingScreen();
+    await getAivmInfos();  // 再取得
   }
 };
 
@@ -512,8 +524,8 @@ const unInstallAivmModel = async () => {
         }
       }
     } finally {
-      await getAivmInfos();  // 再取得
       hideAllLoadingScreen();
+      await getAivmInfos();  // 再取得
     }
   }
 };
@@ -551,8 +563,8 @@ const toggleModelLoad = async () => {
       });
     }
   } finally {
-    await getAivmInfos();  // 再取得
     hideAllLoadingScreen();
+    await getAivmInfos();  // 再取得
   }
 };
 
@@ -606,8 +618,8 @@ const updateAivmModel = async () => {
         }
       }
     } finally {
-      await getAivmInfos();  // 再取得
       hideAllLoadingScreen();
+      await getAivmInfos();  // 再取得
     }
   }
 };
