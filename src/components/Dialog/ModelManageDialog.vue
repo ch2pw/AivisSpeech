@@ -23,7 +23,7 @@
               @click="cancelInstall"
             ></div>
             <QList class="model-list">
-              <QItem v-for="aivmInfo in Object.values(aivmInfoDict)" :key="aivmInfo.manifest.uuid" v-ripple class="q-pr-none" clickable
+              <QItem v-for="aivmInfo in aivmInfoList" :key="aivmInfo.manifest.uuid" v-ripple class="q-pr-none" clickable
                 :active="activeAivmUuid === aivmInfo.manifest.uuid"
                 :class="{ 'loaded-model': aivmInfo.isLoaded }"
                 @click="activeAivmUuid = aivmInfo.manifest.uuid">
@@ -246,31 +246,33 @@ const getApiInstance = async () => {
   return await store.actions.INSTANTIATE_ENGINE_CONNECTOR({ engineId: store.getters.DEFAULT_ENGINE_ID });
 };
 
-// インストール済み AIVM 音声合成モデルの情報
-const aivmInfoDict = ref<{ [key: string]: AivmInfo }>({});
+// インストール済み音声合成モデルの情報 (API レスポンスの順序を保持)
+const aivmInfoList = ref<AivmInfo[]>([]);
 
-// インストール済み AIVM 音声合成モデルの個数
-const aivmCount = computed(() => Object.keys(aivmInfoDict.value).length);
+// インストール済み音声合成モデルの個数
+const aivmCount = computed(() => aivmInfoList.value.length);
 
-// インストール済み AIVM 音声合成モデルの情報を取得する関数
+// インストール済み音声合成モデルの情報を取得する関数
 const getAivmInfos = async () => {
   // 初回のみ読み込み中のローディングを表示する
-  if (Object.keys(aivmInfoDict.value).length === 0) {
+  if (aivmInfoList.value.length === 0) {
     showLoadingScreen({
       message: "読み込み中...",
     });
   }
   const res = await getApiInstance().then((instance) => instance.invoke("getInstalledAivmInfos")({}));
-  aivmInfoDict.value = res;
-  // 初回のみアクティブな AIVM 音声合成モデルの UUID を設定
-  if (activeAivmUuid.value == null && Object.keys(aivmInfoDict.value).length > 0) {
-    activeAivmUuid.value = Object.values(aivmInfoDict.value)[0].manifest.uuid;
+  console.log(res);
+  // Object.keys() の順序を保持した状態で配列に変換
+  aivmInfoList.value = Object.keys(res).map(key => res[key]);
+  // 初回のみアクティブな音声合成モデルの UUID を設定
+  if (activeAivmUuid.value == null && aivmInfoList.value.length > 0) {
+    activeAivmUuid.value = aivmInfoList.value[0].manifest.uuid;
   }
-  // この時点で activeAivmUuid に対応する AIVM 音声合成モデルが存在しない場合は (削除されたなど) 、上記同様に最初の AIVM 音声合成モデルをアクティブにする
-  if (activeAivmUuid.value != null && !(activeAivmUuid.value in aivmInfoDict.value)) {
-    activeAivmUuid.value = Object.values(aivmInfoDict.value)[0].manifest.uuid;
+  // この時点で activeAivmUuid に対応する音声合成モデルが存在しない場合は (削除されたなど) 、上記同様に最初の音声合成モデルをアクティブにする
+  if (activeAivmUuid.value != null && !aivmInfoList.value.some(aivm => aivm.manifest.uuid === activeAivmUuid.value)) {
+    activeAivmUuid.value = aivmInfoList.value[0].manifest.uuid;
   }
-  if (Object.keys(aivmInfoDict.value).length > 0) {
+  if (aivmInfoList.value.length > 0) {
     void hideAllLoadingScreen();
   }
 };
@@ -286,15 +288,15 @@ watch(dialogOpened, () => {
   }
 });
 
-// アクティブな AIVM 音声合成モデルの UUID
+// アクティブな音声合成モデルの UUID
 const activeAivmUuid = ref<string | null>(null);
 
-// アクティブな AIVM 音声合成モデルの情報
+// アクティブな音声合成モデルの情報
 const activeAivmInfo = computed(() => {
-  return activeAivmUuid.value ? aivmInfoDict.value[activeAivmUuid.value] : null;
+  return activeAivmUuid.value ? aivmInfoList.value.find(aivm => aivm.manifest.uuid === activeAivmUuid.value) ?? null : null;
 });
 
-// アクティブな AIVM 音声合成モデルの話者タブのインデックス
+// アクティブな音声合成モデルの話者タブのインデックス
 // QTab / QTabPanel の name 属性の値と一致する
 const activeSpeakerIndex = ref(0);
 
