@@ -93,7 +93,7 @@
                     </div>
                   </div>
                   <div class="row no-wrap items-center" style="margin-top: 12px; font-size: 12.5px; color: #D2D3D4;">
-                    <QIcon style="margin-right: 4px;" name="sym_r_fingerprint" /> Model UUID: {{ activeAivmInfo.manifest.uuid }}
+                    <QIcon style="margin-right: 4px;" name="sym_r_info" /> Model UUID: {{ activeAivmInfo.manifest.uuid }}
                     <QBtn
                       flat
                       round
@@ -102,6 +102,18 @@
                       size="sm"
                       style="margin-left: 2px;"
                       @click="copyModelUuid"
+                    />
+                  </div>
+                  <div v-if="activeAivmInfo.manifest.speakers.length > 1" class="row no-wrap items-center" style="font-size: 12.5px; color: #D2D3D4;">
+                    <QIcon style="margin-right: 4px;" name="sym_r_info" /> Speaker UUID: {{ speaker.uuid }}
+                    <QBtn
+                      flat
+                      round
+                      dense
+                      icon="sym_r_content_copy"
+                      size="sm"
+                      style="margin-left: 2px;"
+                      @click="copySpeakerUuid"
                     />
                   </div>
                   <div class="row no-wrap items-center" style="margin-top: 4px; font-size: 12.5px; color: #D2D3D4;">
@@ -661,6 +673,30 @@ const copyModelUuid = async () => {
     log.error(error);
     void store.actions.SHOW_NOTIFY({
       message: "モデル UUID のコピーに失敗しました",
+      isWarning: true,
+    });
+  }
+};
+
+// 話者 UUID をクリップボードにコピーする
+const copySpeakerUuid = async () => {
+  if (!activeAivmInfo.value) {
+    return;
+  }
+  const speaker = activeAivmInfo.value.manifest.speakers[activeSpeakerIndex.value];
+  if (!speaker) {
+    return;
+  }
+  const uuid = speaker.uuid;
+  try {
+    await navigator.clipboard.writeText(uuid);
+    void store.actions.SHOW_NOTIFY({
+      message: "話者 UUID をクリップボードにコピーしました",
+    });
+  } catch (error) {
+    log.error(error);
+    void store.actions.SHOW_NOTIFY({
+      message: "話者 UUID のコピーに失敗しました",
       isWarning: true,
     });
   }
