@@ -94,14 +94,16 @@ PC の空きメモリが不足している環境では、音声合成エンジ�
 
 > [!WARNING]
 > **⚠️ 企業内ネットワークや HTTPS プロキシ経由などの特殊なインターネット環境では、初回起動時にデフォルトモデルのダウンロードに失敗し、起動できない場合があります。**  
-> その場合は以下をお試しください。
+> その場合はまず、上記『[Q. 初めて起動したのですが、ずっと「音声合成エンジン起動中...」と表示されます。](https://github.com/Aivis-Project/AivisSpeech/blob/master/public/qAndA.md#q-初めて起動したのですがずっと音声合成エンジン起動中と表示されます)』に記載の手順をお試しください。  
+> それでも音声合成エンジンの起動に失敗する場合は、以下をお試しください。
 > 
 > 1. [AivisHub](https://hub.aivis-project.com/) から任意の AIVMX ファイルを直接ダウンロード (約250MB)
 > 2. ダウンロードした .aivmx ファイルを以下のフォルダに配置：  
-   `C:\Users\(ユーザー名)\AppData\Roaming\AivisSpeech-Engine\Models`
+> Windows: `C:\Users\(ユーザー名)\AppData\Roaming\AivisSpeech-Engine\Models`  
+> Mac: `/Users/(ユーザー名)/Library/Application Support/AivisSpeech-Engine/Models`
 > 3. AivisSpeech を再起動
 >
-> それでも音声合成エンジンの起動に失敗する場合は、[お問い合わせフォーム](https://forms.gle/sTsZGfX7aR8ox8Rs7) からご連絡ください。  
+> ここまで試しても音声合成エンジンの起動に失敗する場合は、[お問い合わせフォーム](https://forms.gle/sTsZGfX7aR8ox8Rs7) からご連絡ください。  
 > お問い合わせいただく前に、一度 PC や OS が対応環境かをご確認いただけますと幸いです。
 
 ### Q. インストール先のフォルダはどこですか？

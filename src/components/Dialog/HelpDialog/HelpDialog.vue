@@ -58,23 +58,23 @@
                       aria-label="ヘルプを閉じる"
                       @click="dialogOpened = false"
                     />
-                    <QToolbarTitle class="text-display"> ヘルプ </QToolbarTitle>
+                    <QToolbarTitle class="text-display">ヘルプ</QToolbarTitle>
                     <QBtn
                       v-if="page.component === ContactInfo"
                       outline
+                      class="text-no-wrap text-bold q-mr-sm"
+                      textColor="display"
                       icon="sym_r_description"
                       label="ログフォルダを開く"
-                      textColor="display"
-                      class="text-no-wrap text-bold q-mr-sm"
                       @click="openLogDirectory"
                     />
                     <QBtn
                       v-if="page.component === ContactInfo"
                       outline
+                      class="text-no-wrap text-bold q-mr-sm"
+                      textColor="display"
                       icon="sym_r_description"
                       label="音声合成エンジンのログフォルダを開く"
-                      textColor="display"
-                      class="text-no-wrap text-bold q-mr-sm"
                       @click="openDefaultEngineLogDirectory"
                     />
                   </QToolbar>
