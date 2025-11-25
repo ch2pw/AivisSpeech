@@ -126,7 +126,7 @@
     "@vitest/browser": "3.0.7",
     "@vitest/eslint-plugin": "1.1.38",
     "@vitest/ui": "3.0.7",
-    "@voicevox/eslint-plugin": "file:./eslint-plugin",
+    "@voicevox/eslint-plugin": "file:eslint-plugin",
     "@vue/eslint-config-prettier": "10.2.0",
     "@vue/eslint-config-typescript": "14.5.0",
     "@vue/test-utils": "2.4.6",
