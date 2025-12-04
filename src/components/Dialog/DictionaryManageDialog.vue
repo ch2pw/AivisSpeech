@@ -146,7 +146,7 @@ import { hideAllLoadingScreen, showLoadingScreen } from "@/components/Dialog/Dia
 import { useDictionaryEditor } from "@/composables/useDictionaryEditor";
 import { getWordTypeFromPartOfSpeech, wordTypeLabels } from "@/domain/japanese";
 import { createLogger } from "@/helpers/log";
-import { ResponseError } from "@/openapi";
+import { ResponseError, UserDictWord, UserDictWordFromJSON, UserDictWordToJSON } from "@/openapi";
 import { useStore } from "@/store";
 
 const dialogOpened = defineModel<boolean>("dialogOpened", { default: false });
@@ -315,7 +315,25 @@ const handleImportDictionary = async (): Promise<void> => {
     }
 
     const fileContent = new TextDecoder().decode(fileResult.value);
-    const importedDict = JSON.parse(fileContent);
+    const rawDict = JSON.parse(fileContent) as { [key: string]: unknown };
+
+    // snake_case か camelCase かを判定し、適切に変換する
+    // エンジンとの相互運用性を考慮し、snake_case 形式をメインで想定する
+    // 後方互換性のため、以前の camelCase 形式もサポートする
+    const importedDict: { [key: string]: UserDictWord } = {};
+    for (const [wordId, rawWord] of Object.entries(rawDict)) {
+      const wordObj = rawWord as { [key: string]: unknown };
+      // snake_case 形式かどうかは part_of_speech キーの存在で判定
+      // (snake_case では part_of_speech、camelCase では partOfSpeech になる)
+      const isSnakeCase = "part_of_speech" in wordObj;
+      if (isSnakeCase) {
+        // snake_case 形式: UserDictWordFromJSON を使って camelCase (UserDictWord 型) に変換
+        importedDict[wordId] = UserDictWordFromJSON(wordObj);
+      } else {
+        // camelCase 形式: そのまま UserDictWord 型として使用（後方互換性のため）
+        importedDict[wordId] = wordObj as unknown as UserDictWord;
+      }
+    }
     await createUILockAction(store.actions.IMPORT_USER_DICT({ importedDict }));
     // インポート後に辞書を再読み込み
     await loadUserDict();
@@ -346,7 +364,12 @@ const handleImportDictionary = async (): Promise<void> => {
 const handleExportDictionary = async (): Promise<void> => {
   try {
     // 辞書を JSON 形式でエクスポート (インデント: 4スペース)
-    const dictJson = JSON.stringify(userDict.value, null, 4);
+    // エンジンとの相互運用性を考慮し、snake_case 形式でエクスポートする
+    const snakeCaseDict: { [key: string]: ReturnType<typeof UserDictWordToJSON> } = {};
+    for (const [wordId, word] of Object.entries(userDict.value)) {
+      snakeCaseDict[wordId] = UserDictWordToJSON(word);
+    }
+    const dictJson = JSON.stringify(snakeCaseDict, null, 4);
     const filePath = await window.backend.showSaveFileDialog({
       title: "ユーザー辞書をエクスポート",
       name: "ユーザー辞書ファイル (JSON 形式)",
