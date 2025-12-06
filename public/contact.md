@@ -6,16 +6,13 @@
 
 ## 不具合・バグ報告
 
-不具合を見つけられた方は、以下のいずれかの方法でご報告ください。
+うまく動かない場合や不具合を見つけられた方は、以下のいずれかの方法でご連絡ください。
 
-1. **GitHub Issue (推奨)**  
+1. **お問い合わせフォーム (推奨)**  
+   [Aivis Project お問い合わせフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd1gi8lMW1mpdrkCHbM090pWmWhKgz4tR1Obc9G9hOuWpZPsA/viewform) からご報告いただけます。
+
+2. **GitHub Issue**  
    GitHub アカウントをお持ちの方は、[GitHub の Issue](https://github.com/Aivis-Project/AivisSpeech/issues) からご報告いただけますと、早期の対応が可能です。
-
-2. **Twitter (X)**  
-   [Aivis Project 公式アカウント](https://x.com/aivis_project) へのリプライや DM、またはハッシュタグ [#AivisSpeech](https://x.com/search?q=%23AivisSpeech&src=typed_query) を付けたツイートでご報告いただけます。
-
-3. **お問い合わせフォーム**  
-   [Aivis Project お問い合わせフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd1gi8lMW1mpdrkCHbM090pWmWhKgz4tR1Obc9G9hOuWpZPsA/viewform) からもご報告いただけます。
 
 なるべく以下の情報を添えてご報告いただけますと、より迅速な対応が可能です。
 
