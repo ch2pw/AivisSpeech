@@ -52,6 +52,7 @@
     "postuninstall": "electron-builder install-app-deps"
   },
   "dependencies": {
+    "@alexanderolsen/libsamplerate-js": "2.1.2",
     "@analytics-debugger/ga4mp": "0.0.8",
     "@gtm-support/vue-gtm": "3.1.0",
     "@quasar/extras": "1.16.17",
@@ -89,6 +90,8 @@
     "vue-router": "4.4.0",
     "vuedraggable": "4.1.0",
     "vuex": "4.1.0",
+    "wav-file-decoder": "1.0.3",
+    "wav-file-encoder": "1.0.4",
     "zod": "3.24.2"
   },
   "optionalDependencies": {

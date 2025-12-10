@@ -1,4 +1,3 @@
-import { toBase64 } from "fast-base64";
 import { createUILockAction, withProgress } from "./ui";
 import {
   AudioItem,
@@ -58,6 +57,7 @@ import {
   Voice,
 } from "@/type/preload";
 import { AudioQuery, AccentPhrase, Speaker, SpeakerInfo } from "@/openapi";
+import { concatenateWavBlobs } from "@/helpers/audioHelper";
 import { base64ImageToUri, base64ToUri } from "@/helpers/base64Helper";
 import { getValueOrThrow, ResultError } from "@/type/result";
 import { generateWriteErrorMessage } from "@/helpers/fileHelper";
@@ -1398,28 +1398,17 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
   },
 
   CONNECT_AUDIO: {
-    action: createUILockAction(
-      async (
-        { actions, state },
-        { encodedBlobs }: { encodedBlobs: string[] },
-      ) => {
-        const engineId: EngineId | undefined = state.engineIds[0]; // TODO: 複数エンジン対応, 暫定的に音声結合機能は0番目のエンジンのみを使用する
-        if (engineId == undefined)
-          throw new Error("No such engine registered: index == 0");
-
-        const instance = await actions.INSTANTIATE_ENGINE_CONNECTOR({
-          engineId,
-        });
-        try {
-          return instance.invoke("connectWaves")({
-            requestBody: encodedBlobs,
-          });
-        } catch (e) {
-          window.backend.logError(e);
-          return null;
-        }
-      },
-    ),
+    action: createUILockAction(async (_, { blobs }: { blobs: Blob[] }) => {
+      // 入力 WAV の最大サンプルレートに統一してリサンプリング・連結する
+      // エディタ設定でサンプルレートが指定されている場合はその値が反映された状態で
+      // 音声合成されるため、入力 WAV の最大値を使うことで設定を尊重できる
+      try {
+        return await concatenateWavBlobs(blobs);
+      } catch (e) {
+        window.backend.logError(e);
+        return null;
+      }
+    }),
   },
 
   GENERATE_AND_SAVE_AUDIO: {
@@ -1606,14 +1595,9 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
           filePath = await changeFileTailToNonExistent(filePath, "wav");
         }
 
-        const encodedBlobs: string[] = [];
+        const audioBlobs: Blob[] = [];
         const labs: string[] = [];
         const texts: string[] = [];
-
-        const base64Encoder = async (blob: Blob): Promise<string> => {
-          const arrayBuffer = await blob.arrayBuffer();
-          return toBase64(new Uint8Array(arrayBuffer));
-        };
 
         const totalCount = state.audioKeys.length;
         let finishedCount = 0;
@@ -1635,13 +1619,9 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
           }
 
           const { blob, audioQuery } = fetchAudioResult;
-          const encodedBlob = await base64Encoder(blob);
-          if (encodedBlob == undefined) {
-            return { result: "WRITE_ERROR", path: filePath };
-          }
-          encodedBlobs.push(encodedBlob);
+          audioBlobs.push(blob);
 
-          // 大して処理能力を要しないので、生成設定のon/offにかかわらず生成してしまう
+          // 大して処理能力を要しないので、生成設定の on/off にかかわらず生成してしまう
           const lab = await generateLabFromAudioQuery(audioQuery, labOffset);
           labs.push(lab);
 
@@ -1658,7 +1638,7 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
         }
 
         const connectedWav = await actions.CONNECT_AUDIO({
-          encodedBlobs,
+          blobs: audioBlobs,
         });
         if (!connectedWav) {
           return { result: "ENGINE_ERROR", path: filePath };

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@alexanderolsen/libsamplerate-js':
+        specifier: 2.1.2
+        version: 2.1.2
       '@analytics-debugger/ga4mp':
         specifier: 0.0.8
         version: 0.0.8(picomatch@4.0.3)
@@ -119,6 +122,12 @@ importers:
       vuex:
         specifier: 4.1.0
         version: 4.1.0(vue@3.5.13(typescript@5.8.2))
+      wav-file-decoder:
+        specifier: 1.0.3
+        version: 1.0.3
+      wav-file-encoder:
+        specifier: 1.0.4
+        version: 1.0.4
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -345,6 +354,9 @@ packages:
 
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
+
+  '@alexanderolsen/libsamplerate-js@2.1.2':
+    resolution: {integrity: sha512-pIXQDX/DZIgz6pKInUddDd6Tnq/s2E9g4ZITkKX60kxM/nAuZcxYa/z0y/jwJbjyp/oKe+8/qHLSqMzQ18xSiQ==}
 
   '@analytics-debugger/ga4mp@0.0.8':
     resolution: {integrity: sha512-KAAUhakcw6TGFtU5YrmrJESR3OYHWkDs4sZnxGQUxee9bamfDQQtRogK+TFxW4KzbNkR2K1DvIB5kvbXvoEANA==}
@@ -6261,8 +6273,8 @@ packages:
   vue-component-type-helpers@2.2.8:
     resolution: {integrity: sha512-4bjIsC284coDO9om4HPA62M7wfsTvcmZyzdfR0aUlFXqq4tXxM1APyXpNVxPC8QazKw9OhmZNHBVDA6ODaZsrA==}
 
-  vue-component-type-helpers@3.1.5:
-    resolution: {integrity: sha512-7V3yJuNWW7/1jxCcI1CswnpDsvs02Qcx/N43LkV+ZqhLj2PKj50slUflHAroNkN4UWiYfzMUUUXiNuv9khmSpQ==}
+  vue-component-type-helpers@3.1.8:
+    resolution: {integrity: sha512-oaowlmEM6BaYY+8o+9D9cuzxpWQWHqHTMKakMxXu0E+UCIOMTljyIPO15jcnaCwJtZu/zWDotK7mOIHvWD9mcw==}
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -6324,6 +6336,12 @@ packages:
     resolution: {integrity: sha512-hmV6UerDrPcgbSy9ORAtNXDr9M4wlNP4pEFKye4ujJF8oqgFFuxDCdOLS3eNoRTtq5O3hoBDh9Doj1bQMYHRbQ==}
     peerDependencies:
       vue: ^3.2.0
+
+  wav-file-decoder@1.0.3:
+    resolution: {integrity: sha512-j+yFh6Ux5zMjYmhhRyP2Q574Bc1VwuvJC2SlFPz2BqoEJ6FlNjvJ1XlDiy10NBbEQW+a+3jvUfT5AOBhR4Eavg==}
+
+  wav-file-encoder@1.0.4:
+    resolution: {integrity: sha512-OfJ8DZ8R83zO5OrYnVLpeL97Y/TNMxJiypk8/HZZA+Ko93ZJO1/K8tiWGa02u/iOFwTAqWnyEttoIEEfWe8zhQ==}
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
@@ -6476,6 +6494,8 @@ snapshots:
   7zip-bin@5.2.0: {}
 
   '@adobe/css-tools@4.4.4': {}
+
+  '@alexanderolsen/libsamplerate-js@2.1.2': {}
 
   '@analytics-debugger/ga4mp@0.0.8(picomatch@4.0.3)':
     dependencies:
@@ -8635,7 +8655,7 @@ snapshots:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.5.13(typescript@5.8.2)
-      vue-component-type-helpers: 3.1.5
+      vue-component-type-helpers: 3.1.8
 
   '@stylistic/eslint-plugin-ts@4.2.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)':
     dependencies:
@@ -13311,7 +13331,7 @@ snapshots:
 
   vue-component-type-helpers@2.2.8: {}
 
-  vue-component-type-helpers@3.1.5: {}
+  vue-component-type-helpers@3.1.8: {}
 
   vue-demi@0.14.10(vue@3.5.13(typescript@5.8.2)):
     dependencies:
@@ -13386,6 +13406,10 @@ snapshots:
     dependencies:
       '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.8.2)
+
+  wav-file-decoder@1.0.3: {}
+
+  wav-file-encoder@1.0.4: {}
 
   wcwidth@1.0.1:
     dependencies:

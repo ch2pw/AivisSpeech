@@ -436,7 +436,7 @@ export type AudioStoreTypes = {
   };
 
   CONNECT_AUDIO: {
-    action(payload: { encodedBlobs: string[] }): Blob | null;
+    action(payload: { blobs: Blob[] }): Promise<Blob | null>;
   };
 
   GENERATE_AND_SAVE_AUDIO: {
