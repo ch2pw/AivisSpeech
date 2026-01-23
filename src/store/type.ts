@@ -1599,9 +1599,12 @@ export type SingingCommandStoreTypes = {
  * Command Store Types
  */
 
+// コマンド履歴 (undoCommands/redoCommands) は Vuex state から分離し、
+// command.ts のモジュールスコープ reactive 変数 (commandHistory) に移動済み
+// パフォーマンス改善のため、Immer の produceWithPatches の対象から除外する目的
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type CommandStoreState = {
-  undoCommands: Record<EditorType, Command[]>;
-  redoCommands: Record<EditorType, Command[]>;
+  //
 };
 
 export type CommandStoreTypes = {

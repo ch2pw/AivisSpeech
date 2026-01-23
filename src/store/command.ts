@@ -1,7 +1,7 @@
-import { toRaw } from "vue";
+import { reactive, toRaw } from "vue";
 import { enablePatches, enableMapSet, Immer } from "immer";
 
-import { Command, CommandStoreState, CommandStoreTypes, State } from "./type";
+import { Command, CommandStoreTypes, State } from "./type";
 import { applyPatches } from "@/store/immerPatchUtility";
 import {
   createPartialStore,
@@ -53,9 +53,9 @@ export const createCommandMutation =
   ): Mutation<S, M, K> =>
     (state: S, payload: M[K]): void => {
       const command = recordPatches(payloadRecipe)(state, payload);
-    applyPatches(state, command.redoPatches);
-    state.undoCommands[editor].push(command);
-    state.redoCommands[editor].splice(0);
+      applyPatches(state, command.redoPatches);
+      commandHistory.undoCommands[editor].push(command);
+      commandHistory.redoCommands[editor].splice(0);
     };
 
 /**
@@ -76,7 +76,14 @@ const recordPatches =
       };
     };
 
-export const commandStoreState: CommandStoreState = {
+// コマンド履歴を Vuex state から分離し、モジュールスコープの reactive 変数として管理する
+// これにより、Immer の produceWithPatches に渡される state から履歴データが除外され、
+// 履歴が蓄積してもパフォーマンスが劣化しなくなる
+// Vue の reactive() でラップしているため、getter 内からの参照でもリアクティブ性が維持される
+export const commandHistory = reactive<{
+  undoCommands: Record<EditorType, Command[]>;
+  redoCommands: Record<EditorType, Command[]>;
+}>({
   undoCommands: {
     talk: [],
     song: [],
@@ -85,26 +92,28 @@ export const commandStoreState: CommandStoreState = {
     talk: [],
     song: [],
   },
-};
+});
+
+export const commandStoreState = {};
 
 export const commandStore = createPartialStore<CommandStoreTypes>({
   CAN_UNDO: {
-    getter: (state) => (editor: EditorType) => {
-      return state.undoCommands[editor].length > 0;
+    getter: () => (editor: EditorType) => {
+      return commandHistory.undoCommands[editor].length > 0;
     },
   },
 
   CAN_REDO: {
-    getter: (state) => (editor: EditorType) => {
-      return state.redoCommands[editor].length > 0;
+    getter: () => (editor: EditorType) => {
+      return commandHistory.redoCommands[editor].length > 0;
     },
   },
 
   UNDO: {
     mutation(state, { editor }) {
-      const command = state.undoCommands[editor].pop();
+      const command = commandHistory.undoCommands[editor].pop();
       if (command != null) {
-        state.redoCommands[editor].push(command);
+        commandHistory.redoCommands[editor].push(command);
         applyPatches(state, command.undoPatches);
       }
     },
@@ -121,9 +130,9 @@ export const commandStore = createPartialStore<CommandStoreTypes>({
 
   REDO: {
     mutation(state, { editor }) {
-      const command = state.redoCommands[editor].pop();
+      const command = commandHistory.redoCommands[editor].pop();
       if (command != null) {
-        state.undoCommands[editor].push(command);
+        commandHistory.undoCommands[editor].push(command);
         applyPatches(state, command.redoPatches);
       }
     },
@@ -139,24 +148,24 @@ export const commandStore = createPartialStore<CommandStoreTypes>({
   },
 
   LAST_COMMAND_IDS: {
-    getter(state) {
+    getter() {
       const getLastCommandId = (commands: Command[]): CommandId | null => {
         if (commands.length == 0) return null;
         else return commands[commands.length - 1].id;
       };
 
       return {
-        talk: getLastCommandId(state.undoCommands["talk"]),
-        song: getLastCommandId(state.undoCommands["song"]),
+        talk: getLastCommandId(commandHistory.undoCommands["talk"]),
+        song: getLastCommandId(commandHistory.undoCommands["song"]),
       };
     },
   },
 
   CLEAR_COMMANDS: {
-    mutation(state) {
+    mutation() {
       for (const editor of ["talk", "song"] as const) {
-        state.undoCommands[editor].splice(0);
-        state.redoCommands[editor].splice(0);
+        commandHistory.undoCommands[editor].splice(0);
+        commandHistory.redoCommands[editor].splice(0);
       }
     },
   },
