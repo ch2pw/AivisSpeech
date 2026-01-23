@@ -217,8 +217,10 @@ export const audioStoreState: AudioStoreState = {
 export const audioStore = createPartialStore<AudioStoreTypes>({
   ACTIVE_AUDIO_KEY: {
     getter(state) {
+      // audioItems は Record<AudioKey, AudioItem> なので、in 演算子で O(1) のキー存在チェックが可能
+      // audioKeys 配列の includes() は O(N) の線形探索になるため、セル数が多い場合にパフォーマンスが劣化する
       return state._activeAudioKey != undefined &&
-        state.audioKeys.includes(state._activeAudioKey)
+        state._activeAudioKey in state.audioItems
         ? state._activeAudioKey
         : undefined;
     },
@@ -227,9 +229,10 @@ export const audioStore = createPartialStore<AudioStoreTypes>({
   SELECTED_AUDIO_KEYS: {
     getter(state) {
       return (
-        //  undo/redoで消えていることがあるためフィルタする
-        state._selectedAudioKeys?.filter((audioKey) =>
-          state.audioKeys.includes(audioKey),
+        // undo/redo で消えていることがあるためフィルタする
+        // audioItems は Record<AudioKey, AudioItem> なので in 演算子で O(1) のキー存在チェックが可能
+        state._selectedAudioKeys?.filter(
+          (audioKey) => audioKey in state.audioItems,
         ) || []
       );
     },
