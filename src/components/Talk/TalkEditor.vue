@@ -536,6 +536,9 @@ onetimeWatch(
       const newAudioKey = await store.actions.REGISTER_AUDIO_ITEM({
         audioItem,
       });
+      // DOM フォーカスイベントの発火タイミングに依存せず確実にパネルを表示するため、
+      // focusCell() の前に明示的に activeAudioKey を設定する
+      await store.actions.SET_ACTIVE_AUDIO_KEY({ audioKey: newAudioKey });
       focusCell({ audioKey: newAudioKey, focusTarget: "textField" });
 
       // 最初の話者を初期化
