@@ -163,7 +163,7 @@ export const DEFAULT_AUDIO_FILE_NAME_TEMPLATE =
   "$連番$_$キャラ$（$スタイル$）_$テキスト$";
 const DEFAULT_AUDIO_FILE_NAME_VARIABLES = {
   index: 0,
-  characterName: "Anneli",
+  characterName: "コハク",
   text: "テキストテキストテキスト",
   styleName: DEFAULT_STYLE_NAME,
   date: currentDateString(),
@@ -174,7 +174,7 @@ export const DEFAULT_SONG_AUDIO_FILE_NAME_TEMPLATE =
   "$連番$_$キャラ$（$スタイル$）_$トラック名$";
 const DEFAULT_SONG_AUDIO_FILE_NAME_VARIABLES = {
   index: 0,
-  characterName: "Anneli",
+  characterName: "コハク",
   trackName: DEFAULT_TRACK_NAME,
   styleName: DEFAULT_STYLE_NAME,
   date: currentDateString(),
