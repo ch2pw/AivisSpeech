@@ -49,8 +49,8 @@ const props = defineProps<{
 
 // "VOICEVOX Contributors" などの特殊な Contributors 名に対応する GitHub Contributors ページの URL
 const voicevoxContributorsUrlMap: Record<string, string> = {
-  'VOICEVOX Contributors': 'https://github.com/VOICEVOX/voicevox/graphs/contributors',
-  'VOICEVOX ENGINE Contributors': 'https://github.com/VOICEVOX/voicevox_engine/graphs/contributors',
+  "VOICEVOX Contributors": "https://github.com/VOICEVOX/voicevox/graphs/contributors",
+  "VOICEVOX ENGINE Contributors": "https://github.com/VOICEVOX/voicevox_engine/graphs/contributors",
 };
 
 /**
