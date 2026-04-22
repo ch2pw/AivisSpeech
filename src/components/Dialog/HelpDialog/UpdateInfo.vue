@@ -27,7 +27,7 @@
             :key="contributorIndex"
           >
             <span v-if="contributorIndex > 0"> / </span>
-            <a :href="`https://github.com/${item}`" target="_blank">{{
+            <a :href="getContributorUrl(item)" target="_blank">{{
               item
             }}</a>
           </template>
@@ -46,6 +46,23 @@ const props = defineProps<{
   updateInfos: UpdateInfo[];
   isUpdateAvailable: boolean;
 }>();
+
+// "VOICEVOX Contributors" などの特殊な Contributors 名に対応する GitHub Contributors ページの URL
+const voicevoxContributorsUrlMap: Record<string, string> = {
+  'VOICEVOX Contributors': 'https://github.com/VOICEVOX/voicevox/graphs/contributors',
+  'VOICEVOX ENGINE Contributors': 'https://github.com/VOICEVOX/voicevox_engine/graphs/contributors',
+};
+
+/**
+ * Contributor 名から GitHub の URL を取得する。
+ * "VOICEVOX Contributors" / "VOICEVOX ENGINE Contributors" の場合は GitHub の Contributors ページに、
+ * それ以外の場合は GitHub のユーザープロフィールにリンクする。
+ * @param contributor - Contributor 名（通常は GitHub ユーザー名）
+ * @returns GitHub の URL
+ */
+function getContributorUrl(contributor: string): string {
+  return voicevoxContributorsUrlMap[contributor] ?? `https://github.com/${contributor}`;
+}
 </script>
 
 <style scoped lang="scss">
