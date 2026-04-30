@@ -77,6 +77,7 @@ export interface AccentPhrasesRequest {
     text: string;
     speaker: number;
     isKana?: boolean;
+    enableKatakanaEnglish?: boolean;
     coreVersion?: string;
 }
 
@@ -95,18 +96,21 @@ export interface AddUserDictWordRequest {
 export interface AudioQueryRequest {
     text: string;
     speaker: number;
+    enableKatakanaEnglish?: boolean;
     coreVersion?: string;
 }
 
 export interface AudioQueryFromPresetRequest {
     text: string;
     presetId: number;
+    enableKatakanaEnglish?: boolean;
     coreVersion?: string;
 }
 
 export interface CancellableSynthesisRequest {
     speaker: number;
     audioQuery: AudioQuery;
+    enableInterrogativeUpspeak?: boolean;
     coreVersion?: string;
 }
 
@@ -187,6 +191,7 @@ export interface MorphableTargetsRequest {
 export interface MultiSynthesisRequest {
     speaker: number;
     audioQuery: Array<AudioQuery>;
+    enableInterrogativeUpspeak?: boolean;
     coreVersion?: string;
 }
 
@@ -249,6 +254,7 @@ export interface SynthesisMorphingRequest {
     targetSpeaker: number;
     morphRate: number;
     audioQuery: AudioQuery;
+    enableInterrogativeUpspeak?: boolean;
     coreVersion?: string;
 }
 
@@ -289,11 +295,12 @@ export interface ValidateKanaRequest {
  */
 export interface DefaultApiInterface {
     /**
-     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。
+     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * @summary テキストからアクセント句を得る
      * @param {string} text 
      * @param {number} speaker 
      * @param {boolean} [isKana] 
+     * @param {boolean} [enableKatakanaEnglish] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -302,7 +309,7 @@ export interface DefaultApiInterface {
     accentPhrasesRaw(requestParameters: AccentPhrasesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AccentPhrase>>>;
 
     /**
-     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。
+     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * テキストからアクセント句を得る
      */
     accentPhrases(requestParameters: AccentPhrasesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AccentPhrase>>;
@@ -344,10 +351,11 @@ export interface DefaultApiInterface {
     addUserDictWord(requestParameters: AddUserDictWordRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string>;
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * @summary 音声合成用のクエリを作成する
      * @param {string} text 
      * @param {number} speaker 
+     * @param {boolean} [enableKatakanaEnglish] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -356,16 +364,17 @@ export interface DefaultApiInterface {
     audioQueryRaw(requestParameters: AudioQueryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AudioQuery>>;
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリを作成する
      */
     audioQuery(requestParameters: AudioQueryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AudioQuery>;
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * @summary 音声合成用のクエリをプリセットを用いて作成する
      * @param {string} text 
      * @param {number} presetId 
+     * @param {boolean} [enableKatakanaEnglish] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -374,7 +383,7 @@ export interface DefaultApiInterface {
     audioQueryFromPresetRaw(requestParameters: AudioQueryFromPresetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AudioQuery>>;
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリをプリセットを用いて作成する
      */
     audioQueryFromPreset(requestParameters: AudioQueryFromPresetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AudioQuery>;
@@ -384,6 +393,7 @@ export interface DefaultApiInterface {
      * @summary AivisSpeech Engine ではサポートされていない API です (常に 501 Not Implemented を返します)
      * @param {number} speaker 
      * @param {AudioQuery} audioQuery 
+     * @param {boolean} [enableInterrogativeUpspeak] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -726,6 +736,7 @@ export interface DefaultApiInterface {
      * @summary 複数まとめて音声合成する
      * @param {number} speaker 
      * @param {Array<AudioQuery>} audioQuery 
+     * @param {boolean} [enableInterrogativeUpspeak] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -929,6 +940,7 @@ export interface DefaultApiInterface {
      * @param {number} targetSpeaker 
      * @param {number} morphRate 
      * @param {AudioQuery} audioQuery 
+     * @param {boolean} [enableInterrogativeUpspeak] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {string} [coreVersion] AivisSpeech Engine ではサポートされていないパラメータです (常に無視されます) 。
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1066,7 +1078,7 @@ export interface DefaultApiInterface {
 export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
 
     /**
-     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。
+     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * テキストからアクセント句を得る
      */
     async accentPhrasesRaw(requestParameters: AccentPhrasesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AccentPhrase>>> {
@@ -1092,6 +1104,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
             queryParameters['is_kana'] = requestParameters.isKana;
         }
 
+        if (requestParameters.enableKatakanaEnglish !== undefined) {
+            queryParameters['enable_katakana_english'] = requestParameters.enableKatakanaEnglish;
+        }
+
         if (requestParameters.coreVersion !== undefined) {
             queryParameters['core_version'] = requestParameters.coreVersion;
         }
@@ -1109,7 +1125,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
     }
 
     /**
-     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。
+     * テキストからアクセント句を得ます。<br> is_kanaが`true`のとき、テキストは次の AquesTalk 風記法で解釈されます。デフォルトは`false`です。 * 全てのカナはカタカナで記述される * アクセント句は`/`または`、`で区切る。`、`で区切った場合に限り無音区間が挿入される。 * カナの手前に`_`を入れるとそのカナは無声化される * アクセント位置を`\'`で指定する。全てのアクセント句にはアクセント位置を1つ指定する必要がある。 * アクセント句末に`？`(全角)を入れることにより疑問文の発音ができる。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * テキストからアクセント句を得る
      */
     async accentPhrases(requestParameters: AccentPhrasesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AccentPhrase>> {
@@ -1221,7 +1237,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
     }
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリを作成する
      */
     async audioQueryRaw(requestParameters: AudioQueryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AudioQuery>> {
@@ -1243,6 +1259,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
             queryParameters['speaker'] = requestParameters.speaker;
         }
 
+        if (requestParameters.enableKatakanaEnglish !== undefined) {
+            queryParameters['enable_katakana_english'] = requestParameters.enableKatakanaEnglish;
+        }
+
         if (requestParameters.coreVersion !== undefined) {
             queryParameters['core_version'] = requestParameters.coreVersion;
         }
@@ -1260,7 +1280,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
     }
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリを作成する
      */
     async audioQuery(requestParameters: AudioQueryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AudioQuery> {
@@ -1269,7 +1289,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
     }
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリをプリセットを用いて作成する
      */
     async audioQueryFromPresetRaw(requestParameters: AudioQueryFromPresetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AudioQuery>> {
@@ -1291,6 +1311,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
             queryParameters['preset_id'] = requestParameters.presetId;
         }
 
+        if (requestParameters.enableKatakanaEnglish !== undefined) {
+            queryParameters['enable_katakana_english'] = requestParameters.enableKatakanaEnglish;
+        }
+
         if (requestParameters.coreVersion !== undefined) {
             queryParameters['core_version'] = requestParameters.coreVersion;
         }
@@ -1308,7 +1332,7 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
     }
 
     /**
-     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。
+     * 音声合成用のクエリの初期値を得ます。ここで得られたクエリはそのまま音声合成に利用できます。<br> 各値の意味は `Schemas` を参照してください。  AivisSpeech Engine では英単語は常に自動的に自然なカタカナ読みに変換されて読み上げられる仕様のため、enable_katakana_english は指定不要です（常に無視されます）。
      * 音声合成用のクエリをプリセットを用いて作成する
      */
     async audioQueryFromPreset(requestParameters: AudioQueryFromPresetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AudioQuery> {
@@ -1332,6 +1356,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
 
         if (requestParameters.speaker !== undefined) {
             queryParameters['speaker'] = requestParameters.speaker;
+        }
+
+        if (requestParameters.enableInterrogativeUpspeak !== undefined) {
+            queryParameters['enable_interrogative_upspeak'] = requestParameters.enableInterrogativeUpspeak;
         }
 
         if (requestParameters.coreVersion !== undefined) {
@@ -2119,6 +2147,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
             queryParameters['speaker'] = requestParameters.speaker;
         }
 
+        if (requestParameters.enableInterrogativeUpspeak !== undefined) {
+            queryParameters['enable_interrogative_upspeak'] = requestParameters.enableInterrogativeUpspeak;
+        }
+
         if (requestParameters.coreVersion !== undefined) {
             queryParameters['core_version'] = requestParameters.coreVersion;
         }
@@ -2626,6 +2658,10 @@ export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
 
         if (requestParameters.morphRate !== undefined) {
             queryParameters['morph_rate'] = requestParameters.morphRate;
+        }
+
+        if (requestParameters.enableInterrogativeUpspeak !== undefined) {
+            queryParameters['enable_interrogative_upspeak'] = requestParameters.enableInterrogativeUpspeak;
         }
 
         if (requestParameters.coreVersion !== undefined) {
