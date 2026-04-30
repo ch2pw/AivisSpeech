@@ -10,6 +10,37 @@ export const ensureNotNullish = <T>(
 };
 
 /**
+ * エンジンの HTTP レスポンスから、ユーザー向けに表示可能なエラー本文を抽出する。
+ * エンジンの 4xx 系では FastAPI の慣例通り `{"detail": "..."}` 形式の JSON が返るのに対し、
+ * 500 Internal Server Error は一部バージョンで plain text を返す場合があるため、両形式に対応する。
+ * - JSON かつ `detail` が string の場合: その値を返す (FastAPI 標準形式)
+ * - それ以外の場合: レスポンスの生テキストをそのまま返す
+ * レスポンスボディは一度しか読めないため、既に `.text()` 等で読んだレスポンスに対しては使用できない。
+ *
+ * @param response エンジンから返された fetch の Response オブジェクト
+ * @returns ユーザー向けに表示可能なエラー本文
+ */
+export const extractEngineErrorBody = async (
+  response: Response,
+): Promise<string> => {
+  const rawText = await response.text();
+  try {
+    const parsed: unknown = JSON.parse(rawText);
+    if (
+      typeof parsed === "object" &&
+      parsed != null &&
+      "detail" in parsed &&
+      typeof (parsed as { detail: unknown }).detail === "string"
+    ) {
+      return (parsed as { detail: string }).detail;
+    }
+  } catch {
+    // JSON でなければ plain text として扱う (後続の return でそのまま返す)
+  }
+  return rawText;
+};
+
+/**
  * ユーザーに表示するメッセージを持つエラー。
  * {@link errorToMessages}でユーザー向けのメッセージとして扱われる。
  */

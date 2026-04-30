@@ -145,6 +145,7 @@ import DictionaryEditWordDialog from "./DictionaryEditWordDialog.vue";
 import { hideAllLoadingScreen, showLoadingScreen } from "@/components/Dialog/Dialog";
 import { useDictionaryEditor } from "@/composables/useDictionaryEditor";
 import { getWordTypeFromPartOfSpeech, wordTypeLabels } from "@/domain/japanese";
+import { extractEngineErrorBody } from "@/helpers/errorHelper";
 import { createLogger } from "@/helpers/log";
 import { ResponseError, UserDictWord, UserDictWordFromJSON, UserDictWordToJSON } from "@/openapi";
 import { useStore } from "@/store";
@@ -350,7 +351,7 @@ const handleImportDictionary = async (): Promise<void> => {
       void store.actions.SHOW_ALERT_DIALOG({
         title: "ユーザー辞書のインポートに失敗しました",
         message: "ファイルの形式が正しくありません。\n" +
-                 `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                 `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
       });
     } else {
       await store.actions.SHOW_ALERT_DIALOG({
@@ -392,7 +393,7 @@ const handleExportDictionary = async (): Promise<void> => {
       void store.actions.SHOW_ALERT_DIALOG({
         title: "ユーザー辞書のエクスポートに失敗しました",
         message: "ファイルの書き込みに失敗しました。\n" +
-                 `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                 `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
       });
     } else {
       await store.actions.SHOW_ALERT_DIALOG({

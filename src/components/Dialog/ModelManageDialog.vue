@@ -280,6 +280,7 @@ import {
   hideAllLoadingScreen,
   showLoadingScreen,
 } from "@/components/Dialog/Dialog";
+import { extractEngineErrorBody } from "@/helpers/errorHelper";
 import { formatBytes } from "@/helpers/fileHelper";
 import { createLogger } from "@/helpers/log";
 import { AivmInfo, ResponseError } from "@/openapi";
@@ -482,7 +483,7 @@ const installModel = async () => {
       void store.actions.SHOW_ALERT_DIALOG({
         title: "インストールに失敗しました",
         message: "音声合成モデルのインストールに失敗しました。\n" +
-                 `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                 `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
       });
     } else {
       // assert characterInfo !== undefined エラーを無視
@@ -530,7 +531,7 @@ const unInstallAivmModel = async () => {
         void store.actions.SHOW_ALERT_DIALOG({
           title: "アンインストールに失敗しました",
           message: `音声合成モデル「${activeAivmInfo.value?.manifest.name}」のアンインストールに失敗しました。\n` +
-                   `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                   `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
         });
       } else {
         // assert characterInfo !== undefined エラーを無視
@@ -575,7 +576,7 @@ const toggleModelLoad = async () => {
       void store.actions.SHOW_ALERT_DIALOG({
         title: activeAivmInfo.value?.isLoaded ? "アンロードに失敗しました" : "ロードに失敗しました",
         message: `音声合成モデル「${activeAivmInfo.value?.manifest.name}」の${activeAivmInfo.value?.isLoaded ? "アンロード" : "ロード"}に失敗しました。\n` +
-                 `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                 `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
       });
     } else {
       void store.actions.SHOW_ALERT_DIALOG({
@@ -624,7 +625,7 @@ const updateAivmModel = async () => {
         void store.actions.SHOW_ALERT_DIALOG({
           title: "アップデートに失敗しました",
           message: `音声合成モデル「${activeAivmInfo.value?.manifest.name}」のアップデートに失敗しました。\n` +
-                   `(HTTP Error ${error.response.status} / ${await error.response.text()})`,
+                   `(HTTP Error ${error.response.status} / ${await extractEngineErrorBody(error.response)})`,
         });
       } else {
         // assert characterInfo !== undefined エラーを無視
