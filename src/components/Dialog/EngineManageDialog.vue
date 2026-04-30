@@ -446,6 +446,7 @@ const getFeatureName = (name: keyof SupportedFeatures) => {
       sing: "歌唱音声合成",
       manageLibrary: "音声ライブラリのインストール・アンインストール",
       returnResourceUrl: "キャラクター情報のリソースを URL で返送",
+      applyKatakanaEnglish: "未知の英単語をカタカナ読みに変換",
     };
   return featureNameMap[name];
 };
