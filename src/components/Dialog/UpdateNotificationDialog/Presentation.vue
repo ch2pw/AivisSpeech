@@ -114,8 +114,9 @@
           "
         />
         <!-- アプリ内ダウンロードを開始するメインアクション -->
+        <!-- 未対応プラットフォーム (Linux / ブラウザビルド等) では非表示 -->
         <QBtn
-          v-if="props.downloadState == 'idle'"
+          v-if="props.downloadState == 'idle' && props.isUpdateSupported"
           padding="xs md"
           icon="sym_r_download"
           label="アップデート"
@@ -238,8 +239,10 @@ const props = defineProps<{
   downloadProgress: { downloadedBytes: number; totalBytes: number } | null;
   /** インストーラーのダウンロードエラーメッセージ */
   downloadError: string | null;
-  /** macOS で実行されているかどうか（ボタン文言の切り替えに使用） */
+  /** macOS で実行されているかどうか (ボタン文言の切り替えに使用) */
   isMacOS: boolean;
+  /** アプリ内アップデートに対応しているプラットフォームかどうか */
+  isUpdateSupported: boolean;
 }>();
 const emit = defineEmits<{
   /** スキップするときに呼ばれる */

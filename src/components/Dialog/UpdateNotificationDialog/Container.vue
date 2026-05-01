@@ -20,6 +20,7 @@
     :downloadProgress
     :downloadError
     :isMacOS
+    :isUpdateSupported
     @skipThisVersionClick="handleSkipThisVersionClick"
     @startDownload="handleStartDownload"
     @cancelDownload="handleCancelDownload"
@@ -68,6 +69,10 @@ const updatePlatform = window.backend.getUpdatePlatform();
 // macOS ではインストール後にアプリを終了しないため、ボタン文言を切り替える
 const isMacOS = computed(() => {
   return updatePlatform?.startsWith("macos") === true;
+});
+// アプリ内アップデートに対応しているか (Linux / ブラウザビルドでは非対応)
+const isUpdateSupported = computed(() => {
+  return updatePlatform != null;
 });
 
 const isDialogOpenComputed = computed({
