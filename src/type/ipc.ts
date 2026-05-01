@@ -230,6 +230,21 @@ export type IpcIHData = {
     args: [obj: { filePath: string }];
     return: Result<Uint8Array>;
   };
+
+  DOWNLOAD_UPDATE: {
+    args: [obj: { version: string }];
+    return: Result<{ installerPath: string }>;
+  };
+
+  LAUNCH_UPDATE_INSTALLER: {
+    args: [obj: { installerPath: string }];
+    return: void;
+  };
+
+  CANCEL_UPDATE_DOWNLOAD: {
+    args: [];
+    return: void;
+  };
 };
 
 /**
@@ -288,6 +303,11 @@ export type IpcSOData = {
 
   DETECT_RESIZED: {
     args: [obj: { width: number; height: number }];
+    return: void;
+  };
+
+  UPDATE_DOWNLOAD_PROGRESS: {
+    args: [obj: { downloadedBytes: number; totalBytes: number }];
     return: void;
   };
 };

@@ -124,6 +124,18 @@ export const api: Sandbox = {
   readFile(obj: { filePath: string }) {
     return readFileImpl(obj.filePath);
   },
+  downloadUpdate(/* obj: { version: string } */) {
+    throw new Error("Not supported on Browser version: downloadUpdate");
+  },
+  launchUpdateInstaller(/* obj: { installerPath: string } */) {
+    throw new Error("Not supported on Browser version: launchUpdateInstaller");
+  },
+  cancelUpdateDownload() {
+    throw new Error("Not supported on Browser version: cancelUpdateDownload");
+  },
+  getUpdatePlatform() {
+    return null;
+  },
   isAvailableGPUMode() {
     // TODO: WebAssembly版をサポートする時に実装する
     // FIXME: canvasでWebGLから調べたり、WebGPUがサポートされているかを調べたりで判断は出来そう

@@ -1,15 +1,17 @@
 <template>
   <QDialog v-model="dialogOpened">
     <QCard class="q-py-none dialog-card" style="padding: 0px 28px !important;">
+      <!-- ヘッダー: アップデート通知タイトルと説明文 -->
       <QCardSection class="q-px-none q-py-lg">
         <div class="text-h5">アップデートがあります</div>
         <div class="text-body2 text-grey q-mt-sm">
-          公式サイトから AivisSpeech の最新バージョンをダウンロードできます。
+          AivisSpeech の最新バージョンをダウンロードできます。
         </div>
       </QCardSection>
 
       <QSeparator />
 
+      <!-- リリースノート: バージョンごとの変更内容を一覧表示 -->
       <QCardSection class="q-px-none scroll scrollable-area" style="padding: 20px 0px !important;">
         <template
           v-for="(info, infoIndex) of props.newUpdateInfos"
@@ -29,9 +31,52 @@
 
       <QSeparator />
 
-      <QCardActions class="q-px-none q-py-lg">
+      <!-- ダウンロード中: プログレスバーとダウンロード進捗テキストを表示 -->
+      <QCardSection
+        v-if="props.downloadState == 'downloading'"
+        class="q-px-none q-pt-lg q-pb-none"
+      >
+        <!-- totalBytes が不明（0 以下）の場合は indeterminate モードで表示 -->
+        <QLinearProgress
+          :value="downloadProgressRatio"
+          :indeterminate="
+            props.downloadProgress == null ||
+            props.downloadProgress.totalBytes <= 0
+          "
+          color="primary"
+          trackColor="surface"
+          rounded
+        />
+        <div class="text-body2 text-grey q-mt-sm">
+          {{ downloadProgressText }}
+        </div>
+      </QCardSection>
+
+      <!-- インストール中: 状態表示テキスト -->
+      <QCardSection
+        v-else-if="props.downloadState == 'installing'"
+        class="q-px-none q-pt-lg q-pb-none"
+      >
+        <div class="text-body2 text-grey">インストール中...</div>
+      </QCardSection>
+
+      <!-- エラー: エラーメッセージを表示 -->
+      <QCardSection
+        v-else-if="props.downloadState == 'error'"
+        class="q-px-none q-pt-lg q-pb-none"
+      >
+        <div class="text-negative text-body2">
+          {{ props.downloadError ?? "ダウンロードに失敗しました。" }}
+        </div>
+      </QCardSection>
+
+      <!-- アクションボタン: downloadState に応じてボタンを切り替え -->
+      <QCardActions class="q-px-none q-py-lg update-actions">
         <QSpace />
+
+        <!-- idle 状態: 閉じる / 公式サイト（フォールバック） / アップデート（メインアクション） -->
         <QBtn
+          v-if="props.downloadState == 'idle'"
           padding="xs md"
           icon="sym_r_close"
           label="閉じる"
@@ -53,18 +98,124 @@
             closeUpdateNotificationDialog();
           "
         /> -->
+        <!-- アプリ内ダウンロードが使えない環境向けのフォールバック -->
         <QBtn
+          v-if="props.downloadState == 'idle'"
           padding="xs md"
-          icon="sym_r_download"
-          label="最新バージョンをダウンロード"
+          icon="sym_r_open_in_new"
+          label="公式サイトからダウンロード"
           unelevated
-          color="primary"
-          textColor="display-on-primary"
+          color="surface"
+          textColor="display"
           class="text-bold"
           @click="
             openOfficialWebsite();
             closeUpdateNotificationDialog();
           "
+        />
+        <!-- アプリ内ダウンロードを開始するメインアクション -->
+        <QBtn
+          v-if="props.downloadState == 'idle'"
+          padding="xs md"
+          icon="sym_r_download"
+          label="アップデート"
+          unelevated
+          color="primary"
+          textColor="display-on-primary"
+          class="text-bold"
+          @click="emit('startDownload')"
+        />
+
+        <!-- downloading 状態: キャンセルボタン -->
+        <QBtn
+          v-if="props.downloadState == 'downloading'"
+          padding="xs md"
+          icon="sym_r_close"
+          label="キャンセル"
+          unelevated
+          color="surface"
+          textColor="display"
+          class="text-bold"
+          @click="emit('cancelDownload')"
+        />
+
+        <!-- downloaded 状態: インストール実行ボタン -->
+        <!-- macOS と Windows でボタン文言が異なる -->
+        <template v-if="props.downloadState == 'downloaded'">
+          <!-- macOS: アプリは終了しないので「閉じる」 / Windows: app.quit() されるので「キャンセル」 -->
+          <QBtn
+            v-if="props.isMacOS"
+            padding="xs md"
+            icon="sym_r_close"
+            label="閉じる"
+            unelevated
+            color="surface"
+            textColor="display"
+            class="text-bold"
+            @click="closeUpdateNotificationDialog()"
+          />
+          <QBtn
+            v-else
+            padding="xs md"
+            icon="sym_r_close"
+            label="キャンセル"
+            unelevated
+            color="surface"
+            textColor="display"
+            class="text-bold"
+            @click="closeUpdateNotificationDialog()"
+          />
+          <!-- macOS: DMG を Finder で開く / Windows: NSIS インストーラーを起動して再起動 -->
+          <QBtn
+            padding="xs md"
+            icon="sym_r_install_desktop"
+            :label="props.isMacOS ? 'インストーラーを開く' : 'インストールして再起動'"
+            unelevated
+            color="primary"
+            textColor="display-on-primary"
+            class="text-bold"
+            @click="emit('launchInstaller')"
+          />
+        </template>
+
+        <!-- error 状態: リトライ / 公式サイトからダウンロード（フォールバック） -->
+        <template v-if="props.downloadState == 'error'">
+          <QBtn
+            padding="xs md"
+            icon="sym_r_refresh"
+            label="リトライ"
+            unelevated
+            color="primary"
+            textColor="display-on-primary"
+            class="text-bold"
+            @click="emit('startDownload')"
+          />
+          <QBtn
+            padding="xs md"
+            icon="sym_r_open_in_new"
+            label="公式サイトからダウンロード"
+            unelevated
+            color="surface"
+            textColor="display"
+            class="text-bold"
+            @click="
+              openOfficialWebsite();
+              closeUpdateNotificationDialog();
+            "
+          />
+        </template>
+
+        <!-- installing 状態: 操作不可の状態表示ボタン -->
+        <QBtn
+          v-if="props.downloadState == 'installing'"
+          padding="xs md"
+          icon="sym_r_hourglass_empty"
+          label="インストール中..."
+          unelevated
+          disable
+          color="surface"
+          textColor="display"
+          class="text-bold"
         />
       </QCardActions>
     </QCard>
@@ -72,6 +223,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { UpdateInfo } from "@/type/preload";
 
 const dialogOpened = defineModel<boolean>("dialogOpened", { default: false });
@@ -80,16 +232,77 @@ const props = defineProps<{
   latestVersion: string;
   /** 表示するアップデート情報 */
   newUpdateInfos: UpdateInfo[];
+  /** インストーラーのダウンロード状態 */
+  downloadState: "idle" | "downloading" | "downloaded" | "installing" | "error";
+  /** インストーラーのダウンロード進捗（メインプロセスから IPC で通知される） */
+  downloadProgress: { downloadedBytes: number; totalBytes: number } | null;
+  /** インストーラーのダウンロードエラーメッセージ */
+  downloadError: string | null;
+  /** macOS で実行されているかどうか（ボタン文言の切り替えに使用） */
+  isMacOS: boolean;
 }>();
-defineEmits<{
+const emit = defineEmits<{
   /** スキップするときに呼ばれる */
   (e: "skipThisVersionClick", version: string): void;
+  /** インストーラーのダウンロードを開始するときに呼ばれる */
+  (e: "startDownload"): void;
+  /** インストーラーのダウンロードをキャンセルするときに呼ばれる */
+  (e: "cancelDownload"): void;
+  /** ダウンロード済みインストーラーを起動するときに呼ばれる */
+  (e: "launchInstaller"): void;
 }>();
+
+/**
+ * ダウンロード進捗の比率（0〜1）。
+ * QLinearProgress の value として使用する。
+ * totalBytes が 0 以下の場合は 0 を返す (indeterminate モードになる)。
+ */
+const downloadProgressRatio = computed(() => {
+  if (
+    props.downloadProgress == null ||
+    props.downloadProgress.totalBytes <= 0
+  ) {
+    return 0;
+  }
+
+  return props.downloadProgress.downloadedBytes / props.downloadProgress.totalBytes;
+});
+
+/**
+ * バイト数を MB 単位の人間可読文字列に変換する。
+ * @param bytes バイト数
+ * @returns "XX.X MB" 形式の文字列
+ */
+const formatBytesAsMegabytes = (bytes: number): string => {
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+/**
+ * ダウンロード進捗テキスト。
+ * - 進捗情報がない場合: 「ダウンロードを開始しています。」
+ * - totalBytes が不明の場合: 「XX.X MB をダウンロードしました。」
+ * - totalBytes が既知の場合: 「XX.X MB / YY.Y MB (ZZ%)」
+ */
+const downloadProgressText = computed(() => {
+  if (props.downloadProgress == null) {
+    return "ダウンロードを開始しています。";
+  }
+
+  if (props.downloadProgress.totalBytes <= 0) {
+    return `${formatBytesAsMegabytes(props.downloadProgress.downloadedBytes)} をダウンロードしました。`;
+  }
+
+  const percent = Math.round(downloadProgressRatio.value * 100);
+  return `${formatBytesAsMegabytes(
+    props.downloadProgress.downloadedBytes,
+  )} / ${formatBytesAsMegabytes(props.downloadProgress.totalBytes)} (${percent}%)`;
+});
 
 const closeUpdateNotificationDialog = () => {
   dialogOpened.value = false;
 };
 
+/** 公式サイトをブラウザで開く（アプリ内ダウンロードが使えない場合のフォールバック） */
 const openOfficialWebsite = () => {
   window.open(import.meta.env.VITE_OFFICIAL_WEBSITE_URL, "_blank");
 };

@@ -20,8 +20,15 @@ const meta: Meta<typeof Presentation> = {
         contributors: ["これは表示されないはず"],
       },
     ],
+    downloadState: "idle",
+    downloadProgress: null,
+    downloadError: null,
+    isMacOS: false,
     "onUpdate:dialogOpened": fn(),
     onSkipThisVersionClick: fn(),
+    onStartDownload: fn(),
+    onCancelDownload: fn(),
+    onLaunchInstaller: fn(),
   },
   tags: ["!autodocs"], // ダイアログ系はautodocsのプレビューが正しく表示されないので無効化
 };
@@ -79,13 +86,13 @@ export const OpenOfficialSite: Story = {
     const canvas = within(document.body); // ダイアログなので例外的にdocument.bodyを使う
 
     const button = canvas.getByRole("button", {
-      name: /公式サイトを開く/,
+      name: /公式サイトからダウンロード/,
     });
     await userEvent.click(button);
 
     // 公式サイトが開かれる
     await expect(window.open).toBeCalledWith(
-      "https://voicevox.hiroshiba.jp/",
+      "https://aivis-project.com/speech/",
       "_blank",
     );
     // ダイアログを閉じるイベントが呼ばれる

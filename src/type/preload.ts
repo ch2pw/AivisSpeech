@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IpcSOData } from "./ipc";
+import type { UpdatePlatform } from "@/domain/updateDownload";
 import { AltPortInfos } from "@/store/type";
 import { Result } from "@/type/result";
 import {
@@ -100,6 +101,14 @@ export interface Sandbox {
     buffer: ArrayBuffer | Uint8Array;
   }): Promise<Result<undefined>>;
   readFile(obj: { filePath: string }): Promise<Result<Uint8Array>>;
+  /** インストーラーをダウンロードする */
+  downloadUpdate(obj: { version: string }): Promise<Result<{ installerPath: string }>>;
+  /** ダウンロード済みインストーラーを起動する */
+  launchUpdateInstaller(obj: { installerPath: string }): Promise<void>;
+  /** 進行中のダウンロードをキャンセルする */
+  cancelUpdateDownload(): Promise<void>;
+  /** 現在のプラットフォームのアップデート用インストーラー種別を返す */
+  getUpdatePlatform(): UpdatePlatform | null;
   isAvailableGPUMode(): Promise<boolean>;
   isMaximizedWindow(): Promise<boolean>;
   onReceivedIPCMsg(listeners: {

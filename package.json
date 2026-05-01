@@ -37,6 +37,7 @@
     "test:storybook-vrt": "cross-env TARGET=storybook playwright test",
     "test-watch:storybook-vrt": "cross-env TARGET=storybook PWTEST_WATCH=1 playwright test",
     "test-ui:storybook-vrt": "cross-env TARGET=storybook playwright test --ui",
+    "test:updater": "vitest --run --project node --project unit tests/unit/backend/electron/updateManager.node.spec.ts tests/unit/domain/updateDownload.spec.ts",
     "// --- build ---": "",
     "electron:serve": "cross-env VITE_TARGET=electron vite",
     "electron:build": "cross-env VITE_TARGET=electron NODE_OPTIONS=--max-old-space-size=4096 NODE_ENV=production vite build && electron-builder --config electron-builder.config.cjs --publish never",

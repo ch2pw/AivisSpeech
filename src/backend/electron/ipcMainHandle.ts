@@ -1,14 +1,20 @@
 import fs from "fs";
 import path from "path";
-import { app, nativeTheme, shell } from "electron";
+import { spawn } from "node:child_process";
+import { app, BrowserWindow, nativeTheme, shell } from "electron";
 import { hasSupportedGpu } from "./device";
 import { getConfigManager } from "./electronConfig";
 import { getEngineAndVvppController } from "./engineAndVvppController";
 import { writeFileSafely } from "./fileHelper";
-import { IpcMainHandle } from "./ipc";
+import { IpcMainHandle, ipcMainSendProxy } from "./ipc";
 import { getEngineInfoManager } from "./manager/engineInfoManager";
 import { getEngineProcessManager } from "./manager/engineProcessManager";
 import { getWindowManager } from "./manager/windowManager";
+import { UpdateManager } from "./updateManager";
+import {
+  getCurrentUpdatePlatform,
+  getInstallerFileName,
+} from "@/domain/updateDownload";
 import { AssetTextFileNames } from "@/type/staticResources";
 import { failure, success } from "@/type/result";
 import {
@@ -99,6 +105,10 @@ export function getIpcMainHandle(params: {
   const engineInfoManager = getEngineInfoManager();
   const engineProcessManager = getEngineProcessManager();
   const windowManager = getWindowManager();
+  // 自動アップデート用のダウンロードマネージャー
+  // ダウンロード先はユーザーの Downloads フォルダ
+  const updateManager = new UpdateManager(() => app.getPath("downloads"));
+
   return {
     GET_TEXT_ASSET: async (_, textType) => {
       const fileName = path.join(staticDirPath, AssetTextFileNames[textType]);
@@ -370,6 +380,99 @@ export function getIpcMainHandle(params: {
         const a = e as SystemError;
         return failure(a.code, a);
       }
+    },
+
+    /**
+     * アップデート用インストーラーをダウンロードする。
+     * レンダラーからはバージョン番号のみ受け取り、URL 構築はメインプロセス側で行う。
+     * ダウンロード中は UPDATE_DOWNLOAD_PROGRESS イベントでレンダラーに進捗を通知する。
+     */
+    DOWNLOAD_UPDATE: async (event, { version }) => {
+      // ダウンロード元の GitHub Releases ベース URL
+      // デフォルトは AivisSpeech の公式リリース、手動テスト時は環境変数で上書き可能
+      const githubReleasesBaseUrl =
+        process.env.AIVISSPEECH_UPDATE_BASE_URL ??
+        "https://github.com/Aivis-Project/AivisSpeech/releases/download";
+
+      // 現在のプラットフォームに対応するインストーラー種別を判定
+      const platform = getCurrentUpdatePlatform();
+      if (platform == null) {
+        return failure(
+          "unsupportedPlatform",
+          new Error("Current platform is not supported for auto-update"),
+        );
+      }
+
+      // プラットフォームとバージョンからダウンロード URL を構築
+      const fileName = getInstallerFileName(platform, version);
+      const url = `${githubReleasesBaseUrl}/${version}/${fileName}`;
+
+      // ダウンロード進捗をレンダラーに通知するための BrowserWindow を取得
+      const browserWindow = BrowserWindow.fromWebContents(event.sender);
+      return await updateManager.downloadUpdate({
+        url,
+        fileName,
+        onProgress: (downloadedBytes, totalBytes) => {
+          // IPC send/on パターンでレンダラーに進捗を通知
+          if (browserWindow != null) {
+            ipcMainSendProxy.UPDATE_DOWNLOAD_PROGRESS(browserWindow, {
+              downloadedBytes,
+              totalBytes,
+            });
+          }
+        },
+      });
+    },
+
+    /**
+     * ダウンロード済みインストーラーを起動する。
+     * Windows: NSIS インストーラーを detached プロセスとして起動し、app.quit() でアプリを終了する。
+     *   NSIS のデフォルト動作で既存の AivisSpeech プロセスを検知・終了するため、
+     *   --updated フラグは付けず、app.quit() が間に合わなくてもダイアログで確認される。
+     * macOS: DMG ファイルを Finder で開く。ユーザーが手動で /Applications にドラッグ＆ドロップする。
+     *   アプリは終了しない（macOS はアプリ実行中でも .app バンドルを置換可能）。
+     */
+    LAUNCH_UPDATE_INSTALLER: async (_, { installerPath }) => {
+      // UpdateManager が直前にダウンロードしたパスと一致するか検証し、
+      // レンダラーから渡された任意パスの実行を防ぐ
+      const lastDownloadedPath =
+        updateManager.getLastDownloadedInstallerPath();
+      if (
+        lastDownloadedPath == null ||
+        path.resolve(installerPath) !== path.resolve(lastDownloadedPath)
+      ) {
+        throw new Error(
+          "Invalid installer path: does not match the last downloaded installer",
+        );
+      }
+
+      // Windows: NSIS インストーラーを起動してアプリを終了
+      if (process.platform === "win32") {
+        // detached: true で親プロセス（AivisSpeech）が終了してもインストーラーは動き続ける
+        const childProcess = spawn(installerPath, [], {
+          detached: true,
+          stdio: "ignore",
+        });
+        // 親プロセスの終了を待たないように参照を切る
+        childProcess.unref();
+        // アプリを終了（NSIS が既存プロセスの終了を処理する）
+        app.quit();
+        return;
+      }
+
+      // macOS: DMG ファイルを Finder で開く
+      // shell.openPath() は失敗時に非空のエラーメッセージ文字列を返す
+      if (process.platform === "darwin") {
+        const errorMessage = await shell.openPath(installerPath);
+        if (errorMessage !== "") {
+          throw new Error(`Failed to open installer: ${errorMessage}`);
+        }
+      }
+    },
+
+    /** 進行中のアップデートダウンロードをキャンセルする */
+    CANCEL_UPDATE_DOWNLOAD: () => {
+      updateManager.cancelDownload();
     },
   };
 }

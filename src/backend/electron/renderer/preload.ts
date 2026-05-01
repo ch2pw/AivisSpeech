@@ -67,6 +67,29 @@ const api: Sandbox = {
     return await ipcRendererInvokeProxy.READ_FILE({ filePath });
   },
 
+  downloadUpdate: async ({ version }) => {
+    return await ipcRendererInvokeProxy.DOWNLOAD_UPDATE({ version });
+  },
+
+  launchUpdateInstaller: async ({ installerPath }) => {
+    await ipcRendererInvokeProxy.LAUNCH_UPDATE_INSTALLER({ installerPath });
+  },
+
+  cancelUpdateDownload: async () => {
+    await ipcRendererInvokeProxy.CANCEL_UPDATE_DOWNLOAD();
+  },
+
+  getUpdatePlatform: () => {
+    // preload コンテキストであれば `process.arch` にアクセス可能
+    if (process.platform === "win32" && process.arch === "x64")
+      return "windows-x64";
+    if (process.platform === "darwin" && process.arch === "x64")
+      return "macos-x64";
+    if (process.platform === "darwin" && process.arch === "arm64")
+      return "macos-arm64";
+    return null;
+  },
+
   isAvailableGPUMode: () => {
     return ipcRendererInvokeProxy.IS_AVAILABLE_GPU_MODE();
   },

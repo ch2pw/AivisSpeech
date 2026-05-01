@@ -1,6 +1,7 @@
 import { Plugin } from "vue";
 import { debounce } from "quasar";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { setUpdateDownloadProgress } from "@/composables/useUpdateDownloadProgress";
 import { Store } from "@/store/vuex";
 import { AllActions, AllGetters, AllMutations, State } from "@/store/type";
 
@@ -48,6 +49,10 @@ export const ipcMessageReceiver: Plugin = {
         },
         300,
       ),
+
+      UPDATE_DOWNLOAD_PROGRESS: (_, { downloadedBytes, totalBytes }) => {
+        setUpdateDownloadProgress({ downloadedBytes, totalBytes });
+      },
     });
   },
 };
