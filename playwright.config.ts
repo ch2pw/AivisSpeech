@@ -27,7 +27,7 @@ const isUpdaterE2E = process.argv.some((arg) => {
     normalizedArg.includes(updaterE2ESpecRelativePath) === true ||
     normalizedArg.endsWith(updaterE2ESpecRelativePath) === true
   );
-});
+}) || process.env.npm_lifecycle_event === "test-updater:electron-e2e";
 
 const viteServer = {
   command: "vite --mode test --port 7357",

@@ -1,7 +1,9 @@
 import http from "node:http";
+import path from "node:path";
 import { Readable } from "node:stream";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { UPDATE_TEST_VERSION } from "../src/domain/updateDownload.ts";
@@ -17,47 +19,60 @@ type GitHubRelease = {
   assets: GitHubReleaseAsset[];
 };
 
-const argv = await yargs(hideBin(process.argv))
-  .option("host", {
-    default: "127.0.0.1",
-    type: "string",
-  })
-  .option("port", {
-    default: 18080,
-    type: "number",
-  })
-  .option("repo", {
-    default: "Aivis-Project/AivisSpeech",
-    type: "string",
-  })
-  .help()
-  .parse();
-
-const githubApiHeaders: Record<string, string> = {
-  Accept: "application/vnd.github+json",
-  "User-Agent": "AivisSpeech-update-test-server",
-  "X-GitHub-Api-Version": "2022-11-28",
+type UpdateTestServerContext = {
+  repo: string;
+  githubApiHeaders: Record<string, string>;
+  latestDevReleaseCache: GitHubRelease | undefined;
 };
 
-if (process.env.GITHUB_TOKEN != null && process.env.GITHUB_TOKEN !== "") {
-  githubApiHeaders.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-}
+type UpdateTestServerOptions = {
+  host?: string;
+  port?: number;
+  repo?: string;
+  githubToken?: string;
+};
 
-let latestDevReleaseCache: GitHubRelease | undefined;
+const defaultHost = "127.0.0.1";
+const defaultPort = 18080;
+const defaultRepo = "Aivis-Project/AivisSpeech";
+
+/**
+ * GitHub Releases API へアクセスするためのヘッダーを生成する。
+ * @param githubToken GitHub API 認証に利用する token
+ * @returns GitHub Releases API に渡す HTTP ヘッダー
+ */
+function createGithubApiHeaders(
+  githubToken: string | undefined,
+): Record<string, string> {
+  const githubApiHeaders: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "AivisSpeech-update-test-server",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+
+  if (githubToken != null && githubToken !== "") {
+    githubApiHeaders.Authorization = `Bearer ${githubToken}`;
+  }
+
+  return githubApiHeaders;
+}
 
 /**
  * 最新の dev prerelease を GitHub Releases API から取得する。
+ * @param context update-test-server の実行コンテキスト
  * @returns 最新の dev prerelease
  */
-async function fetchLatestDevRelease(): Promise<GitHubRelease> {
-  if (latestDevReleaseCache != null) {
-    return latestDevReleaseCache;
+async function fetchLatestDevRelease(
+  context: UpdateTestServerContext,
+): Promise<GitHubRelease> {
+  if (context.latestDevReleaseCache != null) {
+    return context.latestDevReleaseCache;
   }
 
   const releaseResponse = await fetch(
-    `https://api.github.com/repos/${argv.repo}/releases`,
+    `https://api.github.com/repos/${context.repo}/releases`,
     {
-      headers: githubApiHeaders,
+      headers: context.githubApiHeaders,
     },
   );
   if (!releaseResponse.ok) {
@@ -73,24 +88,26 @@ async function fetchLatestDevRelease(): Promise<GitHubRelease> {
 
   if (latestDevRelease == null) {
     throw new Error(
-      `Failed to find latest dev release. repo: ${argv.repo}, releaseCount: ${releases.length}`,
+      `Failed to find latest dev release. repo: ${context.repo}, releaseCount: ${releases.length}`,
     );
   }
 
-  latestDevReleaseCache = latestDevRelease;
+  context.latestDevReleaseCache = latestDevRelease;
   console.log(`Using latest dev release: ${latestDevRelease.tag_name}`);
   return latestDevRelease;
 }
 
 /**
  * テスト用に見せるファイル名から、実際の nightly アセットを選択する。
+ * @param context update-test-server の実行コンテキスト
  * @param requestedFileName テスト対象アプリから要求されたファイル名
  * @returns 実際に GitHub から取得する release asset
  */
 async function resolveReleaseAsset(
+  context: UpdateTestServerContext,
   requestedFileName: string,
 ): Promise<GitHubReleaseAsset> {
-  const release = await fetchLatestDevRelease();
+  const release = await fetchLatestDevRelease(context);
   const requestedAssetPattern = requestedFileName.replace(
     UPDATE_TEST_VERSION,
     release.tag_name,
@@ -159,6 +176,32 @@ function createAttachmentContentDisposition(fileName: string): string {
 }
 
 /**
+ * HTTP ハンドラー内で発生した例外を安全に HTTP レスポンスへ反映する。
+ * @param response HTTP レスポンス
+ * @param error 発生した例外
+ */
+function respondInternalServerError(
+  response: http.ServerResponse,
+  error: unknown,
+): void {
+  console.error(error);
+
+  if (response.headersSent === true) {
+    if (response.writableEnded === false) {
+      response.destroy(error instanceof Error ? error : undefined);
+    }
+    return;
+  }
+
+  if (response.writableEnded === true) {
+    return;
+  }
+
+  response.writeHead(500);
+  response.end(String(error));
+}
+
+/**
  * updateInfos.json を返す。
  * @param response HTTP レスポンス
  */
@@ -181,21 +224,23 @@ function respondUpdateInfos(response: http.ServerResponse): void {
 
 /**
  * GitHub Releases の実アセットをプロキシする。
+ * @param context update-test-server の実行コンテキスト
  * @param requestedFileName テスト対象アプリから要求されたファイル名
  * @param response HTTP レスポンス
  */
 async function proxyReleaseAsset(
+  context: UpdateTestServerContext,
   requestedFileName: string,
   response: http.ServerResponse,
 ): Promise<void> {
-  const asset = await resolveReleaseAsset(requestedFileName);
+  const asset = await resolveReleaseAsset(context, requestedFileName);
   console.log(`Proxying release asset: ${asset.name}`);
 
   const assetResponse = await fetch(asset.browser_download_url, {
     headers:
-      githubApiHeaders.Authorization == null
+      context.githubApiHeaders.Authorization == null
         ? undefined
-        : { Authorization: githubApiHeaders.Authorization },
+        : { Authorization: context.githubApiHeaders.Authorization },
     redirect: "follow",
   });
   if (!assetResponse.ok || assetResponse.body == null) {
@@ -221,43 +266,133 @@ async function proxyReleaseAsset(
   ).pipe(response);
 }
 
-const server = http.createServer((request, response) => {
-  void (async () => {
-    try {
-      const requestUrl = new URL(request.url ?? "/", "http://localhost");
+/**
+ * updater E2E / 手動検証向けの HTTP サーバーを生成する。
+ * @param options update-test-server の起動オプション
+ * @returns 起動前の HTTP サーバー
+ */
+export function createUpdateTestServer(
+  options: UpdateTestServerOptions = {},
+): http.Server {
+  const context: UpdateTestServerContext = {
+    repo: options.repo ?? defaultRepo,
+    githubApiHeaders: createGithubApiHeaders(
+      options.githubToken ?? process.env.GITHUB_TOKEN,
+    ),
+    latestDevReleaseCache: undefined,
+  };
 
-      if (request.method !== "GET") {
-        response.writeHead(405);
-        response.end("Method Not Allowed");
-        return;
+  return http.createServer((request, response) => {
+    void (async () => {
+      try {
+        const requestUrl = new URL(request.url ?? "/", "http://localhost");
+
+        if (request.method !== "GET") {
+          response.writeHead(405);
+          response.end("Method Not Allowed");
+          return;
+        }
+
+        if (requestUrl.pathname === "/updateInfos.json") {
+          respondUpdateInfos(response);
+          return;
+        }
+
+        const assetPathPrefix = `/${UPDATE_TEST_VERSION}/`;
+        if (requestUrl.pathname.startsWith(assetPathPrefix)) {
+          const requestedFileName = decodeURIComponent(
+            requestUrl.pathname.slice(assetPathPrefix.length),
+          );
+          await proxyReleaseAsset(context, requestedFileName, response);
+          return;
+        }
+
+        response.writeHead(404);
+        response.end("Not Found");
+      } catch (error) {
+        respondInternalServerError(response, error);
       }
+    })();
+  });
+}
 
-      if (requestUrl.pathname === "/updateInfos.json") {
-        respondUpdateInfos(response);
-        return;
-      }
+/**
+ * updater E2E / 手動検証向けの HTTP サーバーを起動する。
+ * @param options update-test-server の起動オプション
+ * @returns 起動済みの HTTP サーバー
+ */
+export async function startUpdateTestServer(
+  options: UpdateTestServerOptions = {},
+): Promise<http.Server> {
+  const host = options.host ?? defaultHost;
+  const port = options.port ?? defaultPort;
+  const server = createUpdateTestServer(options);
 
-      const assetPathPrefix = `/${UPDATE_TEST_VERSION}/`;
-      if (requestUrl.pathname.startsWith(assetPathPrefix)) {
-        const requestedFileName = decodeURIComponent(
-          requestUrl.pathname.slice(assetPathPrefix.length),
-        );
-        await proxyReleaseAsset(requestedFileName, response);
-        return;
-      }
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, host, () => {
+      server.off("error", reject);
+      console.log(
+        `AivisSpeech update test server is listening. url: http://${host}:${port}`,
+      );
+      resolve();
+    });
+  });
 
-      response.writeHead(404);
-      response.end("Not Found");
-    } catch (error) {
-      console.error(error);
-      response.writeHead(500);
-      response.end(String(error));
-    }
-  })();
-});
+  return server;
+}
 
-server.listen(argv.port, argv.host, () => {
-  console.log(
-    `AivisSpeech update test server is listening. url: http://${argv.host}:${argv.port}`,
-  );
-});
+/**
+ * update-test-server が CLI として直接起動されたかを判定する。
+ * @returns CLI として直接起動された場合は true
+ */
+function isExecutedAsScript(): boolean {
+  if (process.argv[1] == null) {
+    return false;
+  }
+
+  return pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+}
+
+/**
+ * pnpm run 経由で渡された CLI 引数を yargs で解釈できる形に変換する。
+ * @returns update-test-server の CLI 引数
+ */
+function getCliArguments(): string[] {
+  const cliArguments = hideBin(process.argv);
+  return cliArguments[0] === "--" ? cliArguments.slice(1) : cliArguments;
+}
+
+/**
+ * update-test-server を CLI として起動する。
+ */
+async function startCli(): Promise<void> {
+  const argv = await yargs(getCliArguments())
+    .option("host", {
+      default: defaultHost,
+      type: "string",
+    })
+    .option("port", {
+      default: defaultPort,
+      type: "number",
+    })
+    .option("repo", {
+      default: defaultRepo,
+      type: "string",
+    })
+    .help()
+    .parse();
+
+  await startUpdateTestServer({
+    host: argv.host,
+    port: argv.port,
+    repo: argv.repo,
+  });
+}
+
+if (isExecutedAsScript()) {
+  void startCli().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

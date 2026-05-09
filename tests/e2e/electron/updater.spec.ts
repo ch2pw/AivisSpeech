@@ -1,10 +1,12 @@
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
+import type http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { _electron as electron, expect, Page, test } from "@playwright/test";
 import { getNewestQuasarDialog } from "../locators";
+import { startUpdateTestServer as startUpdateTestHttpServer } from "../../../tools/update-test-server";
 import {
   UPDATE_TEST_VERSION,
   getInstallerFileName,
@@ -18,6 +20,8 @@ const updateTestUrl = `http://127.0.0.1:${updateTestPort}`;
 const UPDATE_SERVER_STARTUP_TIMEOUT_MS = 30000;
 /** update-test-server の起動待ちポーリング間隔 (ms) */
 const UPDATE_SERVER_POLL_INTERVAL_MS = 500;
+/** updater E2E 全体のタイムアウト時間 (ms) */
+const UPDATE_E2E_TIMEOUT_MS = 20 * 60 * 1000;
 
 test.describe.configure({ mode: "serial" });
 
@@ -72,54 +76,18 @@ function getExpectedInstallerFileName(): string {
  * @returns テスト終了時に呼び出す cleanup 関数
  */
 async function startUpdateTestServer(): Promise<() => Promise<void>> {
-  const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  const serverProcess = spawn(
-    pnpmCommand,
-    ["run", "update-test-server:serve", "--", "--port", String(updateTestPort)],
-    {
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-
-  let startupError: Error | undefined;
-  serverProcess.once("error", (error) => {
-    startupError = error;
-  });
-
-  serverProcess.stdout.on("data", (chunk: Buffer) => {
-    console.log(chunk.toString());
-  });
-  serverProcess.stderr.on("data", (chunk: Buffer) => {
-    console.error(chunk.toString());
+  const server = await startUpdateTestHttpServer({
+    port: updateTestPort,
   });
 
   const startedAt = Date.now();
   while (Date.now() - startedAt < UPDATE_SERVER_STARTUP_TIMEOUT_MS) {
-    if (startupError != null) {
-      throw startupError;
-    }
-
     const response = await fetch(`${updateTestUrl}/updateInfos.json`).catch(
       () => undefined,
     );
     if (response?.ok === true) {
       return async () => {
-        if (serverProcess.pid == null) {
-          return;
-        }
-
-        if (process.platform === "win32") {
-          await execFileAsync("taskkill", [
-            "/F",
-            "/T",
-            "/PID",
-            String(serverProcess.pid),
-          ]).catch(() => undefined);
-          return;
-        }
-
-        serverProcess.kill();
+        await closeServer(server);
       };
     }
     await new Promise((resolve) =>
@@ -127,10 +95,26 @@ async function startUpdateTestServer(): Promise<() => Promise<void>> {
     );
   }
 
-  serverProcess.kill();
+  await closeServer(server);
   throw new Error(
     `Failed to start update test server within ${UPDATE_SERVER_STARTUP_TIMEOUT_MS}ms.`,
   );
+}
+
+/**
+ * HTTP サーバーを停止する。
+ * @param server 停止する HTTP サーバー
+ */
+async function closeServer(server: http.Server): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => {
+      if (error != null) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 }
 
 /**
@@ -200,6 +184,8 @@ async function waitAndDetachMacDmg(): Promise<void> {
 }
 
 test("packaged app で更新通知から実インストーラー起動まで動作する", async () => {
+  test.setTimeout(UPDATE_E2E_TIMEOUT_MS);
+
   const stopUpdateTestServer = await startUpdateTestServer();
   const expectedInstallerFileName = getExpectedInstallerFileName();
   const expectedInstallerPath = path.join(
