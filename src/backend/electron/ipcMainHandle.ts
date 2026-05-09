@@ -13,7 +13,8 @@ import { getWindowManager } from "./manager/windowManager";
 import { UpdateManager } from "./updateManager";
 import {
   getCurrentUpdatePlatform,
-  getInstallerFileName,
+  resolveUpdateInfosUrl,
+  resolveUpdateInstallerDownload,
 } from "@/domain/updateDownload";
 import { AssetTextFileNames } from "@/type/staticResources";
 import { failure, success } from "@/type/result";
@@ -382,18 +383,23 @@ export function getIpcMainHandle(params: {
       }
     },
 
+    /** アップデート情報 JSON の URL を取得する */
+    GET_UPDATE_INFOS_URL: () => {
+      if (!import.meta.env.VITE_LATEST_UPDATE_INFOS_URL) {
+        throw new Error(
+          "環境変数 VITE_LATEST_UPDATE_INFOS_URL が設定されていません。.env に記載してください。",
+        );
+      }
+
+      return resolveUpdateInfosUrl(import.meta.env.VITE_LATEST_UPDATE_INFOS_URL);
+    },
+
     /**
      * アップデート用インストーラーをダウンロードする。
      * レンダラーからはバージョン番号のみ受け取り、URL 構築はメインプロセス側で行う。
      * ダウンロード中は UPDATE_DOWNLOAD_PROGRESS イベントでレンダラーに進捗を通知する。
      */
     DOWNLOAD_UPDATE: async (event, { version }) => {
-      // ダウンロード元の GitHub Releases ベース URL
-      // デフォルトは AivisSpeech の公式リリース、手動テスト時は環境変数で上書き可能
-      const githubReleasesBaseUrl =
-        process.env.AIVISSPEECH_UPDATE_BASE_URL ??
-        "https://github.com/Aivis-Project/AivisSpeech/releases/download";
-
       // 現在のプラットフォームに対応するインストーラー種別を判定
       const platform = getCurrentUpdatePlatform();
       if (platform == null) {
@@ -404,8 +410,10 @@ export function getIpcMainHandle(params: {
       }
 
       // プラットフォームとバージョンからダウンロード URL を構築
-      const fileName = getInstallerFileName(platform, version);
-      const url = `${githubReleasesBaseUrl}/${version}/${fileName}`;
+      const { fileName, url } = resolveUpdateInstallerDownload(
+        platform,
+        version,
+      );
 
       // ダウンロード進捗をレンダラーに通知するための BrowserWindow を取得
       const browserWindow = BrowserWindow.fromWebContents(event.sender);

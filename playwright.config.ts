@@ -6,6 +6,7 @@
  *   テスト条件によって用意したい環境が異なるため。
  */
 
+import path from "node:path";
 import type { PlaywrightTestConfig, Project } from "@playwright/test";
 import dotenv from "dotenv";
 
@@ -16,6 +17,17 @@ let webServers: PlaywrightTestConfig["webServer"];
 const isElectron = process.env.VITE_TARGET === "electron";
 const isBrowser = process.env.VITE_TARGET === "browser";
 const isStorybook = process.env.TARGET === "storybook";
+
+const updaterE2ESpecRelativePath = path.normalize(
+  "tests/e2e/electron/updater.spec.ts",
+);
+const isUpdaterE2E = process.argv.some((arg) => {
+  const normalizedArg = path.normalize(arg);
+  return (
+    normalizedArg.includes(updaterE2ESpecRelativePath) === true ||
+    normalizedArg.endsWith(updaterE2ESpecRelativePath) === true
+  );
+});
 
 const viteServer = {
   command: "vite --mode test --port 7357",
@@ -30,7 +42,7 @@ const storybookServer = {
 
 if (isElectron) {
   project = { name: "electron", testDir: "./tests/e2e/electron" };
-  webServers = [viteServer];
+  webServers = isUpdaterE2E ? [] : [viteServer];
 } else if (isBrowser) {
   project = { name: "browser", testDir: "./tests/e2e/browser" };
   webServers = [viteServer];
@@ -52,8 +64,8 @@ if (isElectron) {
 const config: PlaywrightTestConfig = {
   testDir: "./tests/e2e",
   /* Maximum time one test can run for. */
-  timeout: 60 * 1000,
-  globalTimeout: 5 * 60 * 1000,
+  timeout: isUpdaterE2E ? 20 * 60 * 1000 : 60 * 1000,
+  globalTimeout: isUpdaterE2E ? 30 * 60 * 1000 : 5 * 60 * 1000,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -70,7 +82,7 @@ const config: PlaywrightTestConfig = {
     ? [["html", { open: "never" }], ["github"]]
     : [["html", { open: "on-failure" }]],
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI && !isUpdaterE2E ? 2 : 0,
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,

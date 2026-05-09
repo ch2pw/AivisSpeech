@@ -6,6 +6,7 @@ import {
   Sandbox,
   SandboxKey,
   TextAsset,
+  UrlString,
 } from "@/type/preload";
 
 const ipcRendererInvokeProxy = new Proxy(
@@ -65,6 +66,10 @@ const api: Sandbox = {
 
   readFile: async ({ filePath }) => {
     return await ipcRendererInvokeProxy.READ_FILE({ filePath });
+  },
+
+  getUpdateInfosUrl: async () => {
+    return UrlString(await ipcRendererInvokeProxy.GET_UPDATE_INFOS_URL());
   },
 
   downloadUpdate: async ({ version }) => {

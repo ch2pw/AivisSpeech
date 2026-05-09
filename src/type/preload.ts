@@ -101,6 +101,8 @@ export interface Sandbox {
     buffer: ArrayBuffer | Uint8Array;
   }): Promise<Result<undefined>>;
   readFile(obj: { filePath: string }): Promise<Result<Uint8Array>>;
+  /** アップデート情報 JSON の URL を取得する */
+  getUpdateInfosUrl(): Promise<UrlString>;
   /** インストーラーをダウンロードする */
   downloadUpdate(obj: { version: string }): Promise<Result<{ installerPath: string }>>;
   /** ダウンロード済みインストーラーを起動する */

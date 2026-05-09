@@ -48,13 +48,13 @@ jobs:
       - run: pnpm run electron:build
 
   # 自動アップデート機能のユニットテスト
-  test-updater:
+  test-updater-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-environment
-      - run: pnpm run test:updater
+      - run: pnpm run test-updater:unit
 
   lint:
     runs-on: ubuntu-latest

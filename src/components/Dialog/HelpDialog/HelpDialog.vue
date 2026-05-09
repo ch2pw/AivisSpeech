@@ -99,7 +99,7 @@ import OssLicense from "./OssLicense.vue";
 import UpdateInfo from "./UpdateInfo.vue";
 import QAndA from "./QAndA.vue";
 import ContactInfo from "./ContactInfo.vue";
-import { UpdateInfo as UpdateInfoObject, UrlString } from "@/type/preload";
+import { UpdateInfo as UpdateInfoObject } from "@/type/preload";
 import { useStore } from "@/store";
 import { useFetchNewUpdateInfos } from "@/composables/useFetchNewUpdateInfos";
 import { createLogger } from "@/helpers/log";
@@ -128,14 +128,9 @@ const { warn } = createLogger("HelpDialog");
 const updateInfos = ref<UpdateInfoObject[]>();
 void store.actions.GET_UPDATE_INFOS().then((obj) => (updateInfos.value = obj));
 
-if (!import.meta.env.VITE_LATEST_UPDATE_INFOS_URL) {
-  throw new Error(
-    "環境変数VITE_LATEST_UPDATE_INFOS_URLが設定されていません。.envに記載してください。",
-  );
-}
 const newUpdateResult = useFetchNewUpdateInfos(
   () => getAppInfos().version,
-  UrlString(import.meta.env.VITE_LATEST_UPDATE_INFOS_URL),
+  () => window.backend.getUpdateInfosUrl(),
 );
 
 // エディタのOSSライセンス取得

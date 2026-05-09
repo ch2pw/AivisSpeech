@@ -231,6 +231,11 @@ export type IpcIHData = {
     return: Result<Uint8Array>;
   };
 
+  GET_UPDATE_INFOS_URL: {
+    args: [];
+    return: string;
+  };
+
   DOWNLOAD_UPDATE: {
     args: [obj: { version: string }];
     return: Result<{ installerPath: string }>;

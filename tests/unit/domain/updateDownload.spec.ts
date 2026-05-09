@@ -2,6 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   getCurrentUpdatePlatform,
   getInstallerFileName,
+  resolveUpdateInfosUrl,
+  resolveUpdateInstallerDownload,
 } from "@/domain/updateDownload";
 
 const originalPlatform = process.platform;
@@ -72,3 +74,36 @@ describe("getCurrentUpdatePlatform", () => {
   });
 });
 
+describe("resolveUpdateInfosUrl", () => {
+  test("通常時はビルド時に指定された更新情報 URL を返す", () => {
+    expect(resolveUpdateInfosUrl("https://example.com/updateInfos.json")).toBe(
+      "https://example.com/updateInfos.json",
+    );
+  });
+
+  test("AIVISSPEECH_UPDATE_TEST_URL がある場合はテストサーバーの更新情報 URL を返す", () => {
+    vi.stubEnv("AIVISSPEECH_UPDATE_TEST_URL", "http://127.0.0.1:18080");
+
+    expect(resolveUpdateInfosUrl("https://example.com/updateInfos.json")).toBe(
+      "http://127.0.0.1:18080/updateInfos.json",
+    );
+  });
+});
+
+describe("resolveUpdateInstallerDownload", () => {
+  test("通常時は公式 GitHub Releases のインストーラー URL を返す", () => {
+    expect(resolveUpdateInstallerDownload("macos-arm64", "1.2.3")).toEqual({
+      fileName: "AivisSpeech-macOS-arm64-1.2.3.dmg",
+      url: "https://github.com/Aivis-Project/AivisSpeech/releases/download/1.2.3/AivisSpeech-macOS-arm64-1.2.3.dmg",
+    });
+  });
+
+  test("AIVISSPEECH_UPDATE_TEST_URL がある場合はテストサーバーのインストーラー URL を返す", () => {
+    vi.stubEnv("AIVISSPEECH_UPDATE_TEST_URL", "http://127.0.0.1:18080");
+
+    expect(resolveUpdateInstallerDownload("windows-x64", "9999.0.0")).toEqual({
+      fileName: "AivisSpeech-Windows-x64-9999.0.0.exe",
+      url: "http://127.0.0.1:18080/9999.0.0/AivisSpeech-Windows-x64-9999.0.0.exe",
+    });
+  });
+});

@@ -21,6 +21,7 @@ on:
         type: boolean
         default: false
       upload_artifact:
+        # NOTE: 自動アップデート機能の E2E テストを実行するために必要な成果物はこの設定に関わらず常にアップロードされる
         description: "デバッグ用に成果物を artifact にアップロードするか"
         type: boolean
         default: false
@@ -299,7 +300,7 @@ jobs:
           7z rn $name.zip prepackage/ AivisSpeech/
 
       - name: Upload Windows & Mac zip (without nvidia) to Artifacts
-        if: (startsWith(matrix.artifact_name, 'windows-') || startsWith(matrix.artifact_name, 'macos-')) && !contains(matrix.artifact_name, 'nvidia') && github.event.inputs.upload_artifact == 'true'
+        if: (startsWith(matrix.artifact_name, 'windows-') || startsWith(matrix.artifact_name, 'macos-')) && !contains(matrix.artifact_name, 'nvidia')
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}-zip
@@ -455,9 +456,53 @@ jobs:
             dist_electron/nsis-web/*.exe
           target_commitish: ${{ github.sha }}
 
+  # 自動アップデート機能の E2E テスト
+  ## 自動アップデート機能の自動テストは可能な限り製品ビルドに近い構成で実行しなければ意味がないため、
+  ## 実際にビルド CI を回した後に成果物をダウンロードして E2E テストを回す構成としている
+  ## テスト用 CI に実装すると別途ビルドを回す必要が出てきて処理が重複するため、このビルド用 CI にて実装している
+  test-updater-e2e:
+    needs: [build-and-upload]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - artifact_name: windows-x64-prepackage
+            os: windows-2022
+          - artifact_name: macos-x64-prepackage
+            os: macos-15-intel
+          - artifact_name: macos-arm64-prepackage
+            os: macos-14
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+
+      - name: Download AivisSpeech app artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-zip
+
+      - name: Extract AivisSpeech app artifact
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            seven_zip="vendored/7z/7za.exe"
+          else
+            seven_zip="vendored/7z/7zz"
+          fi
+
+          "$seven_zip" x ./*.zip
+
+      - name: Run updater E2E
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm run test-updater:electron-e2e
+
   update-tag-to-current-commit:
     if: ${{ (github.event.release.tag_name || github.event.inputs.version) != '' }}
-    needs: [build-and-upload]
+    needs: [build-and-upload, test-updater-e2e]
     runs-on: ubuntu-latest
     steps:
       - name: <Setup> Check out the repository

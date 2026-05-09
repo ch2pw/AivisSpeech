@@ -55,3 +55,23 @@ it("新バージョンがない場合は状態が変わるだけ", async () => {
   await waitFinished(result);
   expect(result.value).toMatchObject({ status: "updateNotAvailable" });
 });
+
+it("更新情報 URL の取得に失敗した場合は更新なしとして扱う", async () => {
+  const currentVersion = "1.0.0";
+  const fetchMock = vi.fn();
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.stubGlobal("fetch", fetchMock);
+
+  const result = useFetchNewUpdateInfos(
+    async () => currentVersion,
+    async () => {
+      throw new Error("Failed to resolve update infos URL.");
+    },
+  );
+
+  await waitFinished(result);
+  expect(result.value).toMatchObject({ status: "updateNotAvailable" });
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(warnSpy).toHaveBeenCalled();
+  warnSpy.mockRestore();
+});

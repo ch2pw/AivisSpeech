@@ -17,6 +17,7 @@ import {
   EngineSettingType,
   EngineSettings,
   Sandbox,
+  UrlString,
 } from "@/type/preload";
 import { AssetTextFileNames } from "@/type/staticResources";
 import { HotkeySettingType } from "@/domain/hotkeyAction";
@@ -123,6 +124,11 @@ export const api: Sandbox = {
   },
   readFile(obj: { filePath: string }) {
     return readFileImpl(obj.filePath);
+  },
+  getUpdateInfosUrl() {
+    return Promise.resolve(
+      UrlString(import.meta.env.VITE_LATEST_UPDATE_INFOS_URL),
+    );
   },
   downloadUpdate(/* obj: { version: string } */) {
     throw new Error("Not supported on Browser version: downloadUpdate");
