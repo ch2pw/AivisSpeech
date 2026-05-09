@@ -1,94 +1,99 @@
 # AivisSpeech エージェント作業指針
 
-AivisSpeech は VOICEVOX エディターを upstream として継続追従している Electron / Vue アプリです。  
-このリポジトリでは、局所的にきれいな変更よりも、upstream との差分を不用意に広げず、将来のマージ可能性を保つことを優先してください。
+AivisSpeech は VOICEVOX エディターを upstream として継続的に追従している Electron / Vue アプリケーションです。  
+このリポジトリでは、局所的にきれいな変更よりも、upstream との差分を不用意に広げず、将来のマージ可能性を保つことを最優先としてください。
 
 ## 基本方針
 
-- 変更前に、該当コードが AivisSpeech 固有実装なのか、VOICEVOX 由来の upstream コードなのかを確認します。
-- upstream 由来のコードは、明確な必要がない限り構造変更・リファクタリング・削除を避けます。
+- 変更前に、該当コードが AivisSpeech 固有の実装なのか、VOICEVOX 由来の upstream コードなのかを必ず確認してください。
+- upstream 由来のコードは、明確な必要がない限り構造変更・リファクタリング・削除を避けてください。
 - 未使用に見えるコード、コメントアウトされたコード、Linux 向けの無効化された処理、古いドキュメントは、将来の upstream 追従や対応再開のために意図的に残されている可能性があります。
-- 「不要そうだから削除する」「ついでに整理する」「一貫していないので全面的に直す」といった変更は避けます。
-- 既存コメントには設計意図や歴史的経緯が含まれていることがあります。古く見えても、削除より更新・補足を優先します。
-- 仕様を増やす場合は、通常利用者向けの仕様と、開発・検証専用の仕様を明確に分けます。開発用の環境変数やモードは最小限にしてください。
+- 「不要そうだから削除する」「ついでに整理する」「一貫していないので全面的に直す」といった変更は避けてください。
+- 既存コメントには設計意図や歴史的経緯が含まれていることがあります。古く見えても、削除より更新・補足を優先してください。
+- 仕様を増やす場合は、通常利用者向けの仕様と開発・検証専用の仕様を明確に分けてください。開発用の環境変数やモードは最小限にしてください。
 
 ## upstream 追従
 
-- VOICEVOX からの移植・追従を容易にするため、upstream と同じファイル構造・命名・処理の流れをできるだけ維持します。
-- AivisSpeech 固有の都合で upstream と違う処理を入れる場合は、差分の範囲を小さくし、周辺の upstream コードを巻き込まないでください。
-- upstream 側に由来する不自然な設計、重複、古い実装、パッチワーク的な処理があっても、AivisSpeech の要件に直接影響しない限り修正対象にしません。
-- ブランド名の置換は必要箇所に限定します。VOICEVOX 由来であること自体に意味がある表示、コメント、型名、互換機能名を機械的に置換しないでください。
+- VOICEVOX からの移植・追従を容易にするため、upstream と同じファイル構造・命名・処理の流れをできるだけ維持してください。
+- AivisSpeech 固有の都合で upstream と異なる処理を入れる場合は、差分の範囲を最小限にし、周辺の upstream コードを巻き込まないでください。
+- upstream 側に由来する不自然な設計、重複、古い実装、パッチワーク的な処理があっても、AivisSpeech の要件に直接影響しない限り修正対象にしないでください。
+- ブランド名の置換は必要箇所に限定してください。VOICEVOX 由来であること自体に意味がある表示、コメント、型名、互換機能名を機械的に置換しないでください。
 - AivisSpeech で現在使っていない機能でも、upstream 追従のために残している場合があります。削除や大規模な無効化を行う前に必ず確認してください。
 
 ## Git と作業範囲
 
 - ユーザーの明示的な指示がない限り、`git add`、`git reset`、`git restore`、`git checkout`、`git commit`、`git clean` を実行しないでください。
-- 作業ツリーに既存変更がある場合は、それをユーザーの作業として扱い、巻き戻したり整形し直したりしないでください。
-- 依頼された問題に直接関係するファイルだけを触ります。周辺の気になる点は、必要なら提案として報告します。
+- 作業ツリーに既存の変更がある場合は、それをユーザーの作業として扱い、巻き戻したり整形し直したりしないでください。
+- 依頼された問題に直接関係するファイルだけを変更してください。周辺の気になる点は、必要であれば提案として報告してください。
 - ファイル削除は、たとえ一時ファイルや生成物に見えても、ユーザーの許可なしに行わないでください。
-- コミットメッセージや履歴を確認する必要がある場合は、既存の書式・言語・粒度に合わせます。
+- コミットメッセージや履歴を確認する必要がある場合は、既存の書式・言語・粒度に合わせてください。
+
+## AivisSpeech-Engine との関係
+
+- AivisSpeech-Engine は別リポジトリ (`Aivis-Project/AivisSpeech-Engine`) で開発されている Python ベースの音声合成エンジンです。エディタ (このリポジトリ) 単体では音声合成機能は動作せず、Engine を同梱した状態で初めて製品として成立します。
+- CI の build pipeline では、`.github/actions/download-engine` カスタム Action を使って Engine の指定バージョンをダウンロードし、`prepackage/` 配下に配置しています。Engine の起動パスは OS ごとに異なり、`.env.production` 内で定義されています。
+- Engine のバージョン管理やダウンロード・配置の仕組みを変更する場合は、editor 側だけで完結していると決めつけず、Engine 側のリリースフローや CI の download action との整合を必ず確認してください。
 
 ## CI とビルド
 
 - このプロジェクトの製品ビルドはローカル実行を前提にしていません。CI の build pipeline が実際の製品ビルド手順です。
-- `.github/workflows/build.yml` は複雑ですが、upstream 由来の構造や将来復帰予定の処理が混在しています。整理目的で job、matrix、コメントアウトされた Linux 処理を削除しないでください。
-- `upload_artifact` はデバッグ用成果物アップロードのスイッチです。ただし、後続の `test-updater-e2e` job が必要とする最小限の app artifact（Windows / macOS の zip）は、このスイッチに関わらず常にアップロードされる設計になっています。
-- build と E2E は責務を分けます。製品に近い E2E は、build job が作った artifact を後続 job でダウンロードして実行する形を優先します。
-- `setup-environment` action の中で pnpm / Node / install が扱われます。CI で pnpm を直接使う job を追加する場合は、既存の setup pattern を確認してください。
-- Windows / macOS / Linux の分岐は将来対応や upstream 追従のために残されていることがあります。現時点で無効でも、勝手に消さないでください。
+- パッケージマネージャーには pnpm を使用しています。`package.json` の `preinstall` で `only-allow pnpm` が設定されており、npm や yarn では依存関係のインストールすら実行できません。スクリプトの実行には常に `pnpm run` を使用してください。
+- `.github/workflows/build.yml` は、VOICEVOX の CI をベースに AivisSpeech 固有の要件（Engine の同梱、自動アップデート E2E テスト、コード署名など）を積み重ねた結果として複雑化しています。upstream 由来の構造や将来復帰予定の処理が混在しているため、整理目的で job、matrix、コメントアウトされた Linux 処理などを削除しないでください。
+- `upload_artifact` はデバッグ用の成果物アップロードスイッチですが、後続の E2E テスト job が必要とする最小限の artifact はこのスイッチに関わらず常にアップロードされる設計です。
+- build と E2E は責務を分けています。製品に近い E2E テストは、build job が作った artifact を後続 job でダウンロードして実行する形を優先してください。
+- `setup-environment` action の中で pnpm / Node / 依存関係のインストールが行われます。CI で新しい job を追加する場合は、既存の setup パターンを確認してください。
+- Windows / macOS / Linux の分岐は将来の対応や upstream 追従のために残されていることがあります。現時点で無効でも、削除しないでください。
 
 ## テスト
 
-- README にある通り、既存テストの多くは AivisSpeech 向けに十分維持されていません。全 unit / E2E が常に信頼できる前提で判断しないでください。
-- 直近で追加・修正した機能に専用の narrow test script がある場合、その script に関連テストを明示的に含めます。
-- `test-updater:unit` は、壊れがちな既存 unit 全体を避けつつ、アップデート機能に関係する直近の unit test だけを CI で回すための script です。アップデート機能の unit spec を追加したら、ここに入れるかを必ず検討してください。
-- updater の E2E は、可能な限り packaged app と実際の nightly asset に近い条件で検証することを重視します。dev server だけで確認して終わらせないでください。
-- Electron E2E や updater test は OS 依存です。Windows と macOS で実際に通る処理か、CI matrix と artifact 名まで確認してください。
-- ローカルの Codex サンドボックスでは、`127.0.0.1` や `::1` にテストサーバーを立てる処理が `listen EPERM` で失敗することがあります。その場合は実装不具合と断定せず、環境制限として扱ってください。
-- テスト名や説明は、既存の日本語テストの粒度に合わせます。何を保証するテストかが読める名前にしてください。
+- upstream (VOICEVOX) のテストコードは UI の大改変などにより、AivisSpeech 向けには十分に維持されていません。既存の全 unit / E2E テストが常に信頼できる前提で判断しないでください。
+- 本来はテストスイート全体を修正すべきですが、upstream 側の変更が大きく追従が追いついていないため、現状では既存テストの大規模修正は保留しています。将来の upstream マージを見据え、テストコードへの不必要な変更は避けてください。
+- その代わり、AivisSpeech で独自に追加した新規機能（自動アップデート機能など）については、手動テストが困難な部類に入ることもあり、その機能に特化した unit テストと E2E テストを別途整備して CI で実行しています。たとえば `test-updater:unit` はアップデート機能に関連するテストだけを抜き出して CI で実行するためのスクリプトです。
+- 新しい機能に対してテストを追加する場合は、既存のテストスイートに混ぜるのではなく、同様に機能ごとの narrow test script を用意して CI に組み込むことを検討してください。追加したテストファイルを既存の narrow test script に含めるべきかも確認してください。
+- E2E テストは、可能な限り packaged app と実際のリリースアセットに近い条件で検証することを重視しています。dev server だけで確認して終わらせないでください。
+- Electron E2E テストは OS 依存です。Windows と macOS で実際に通る処理かどうか、CI matrix との整合も確認してください。
+- Codex サンドボックスでは、`127.0.0.1` や `::1` にテストサーバーを立てる処理が `listen EPERM` で失敗することがあります。その場合は実装不具合と断定せず、環境制限として扱ってください。
+- テスト名や説明は、既存の日本語テストの粒度に合わせてください。何を保証するテストなのかが読み取れる名前にしてください。
 
-## updater 実装
+## 簡易自動アップデート機能
 
-- アップデート機能はユーザーの更新適用率に直結するため、実際の通知表示、ダウンロード、インストーラー起動に近い経路を優先して検証します。
-- 現在は `electron-updater` は使用せず、`UpdateManager` クラス (`src/backend/electron/updateManager.ts`) による独自の HTTP ダウンロード実装を採用しています。`electron-updater` の組み込み機能へ寄せる変更は、Windows NSIS 周辺や CI を大きく変える可能性があるため、簡単な置換として扱わないでください。
-- 開発・検証用の updater 差し替えは、環境変数を増やしすぎないことを優先します。現行の検証用入口は `AIVISSPEECH_UPDATE_TEST_URL` です。
-- 通常の update info URL と installer URL の解決は、packaged app で効く場所に置きます。renderer だけで完結する `import.meta.env` と、main process の `process.env` の違いを確認してください。
-- テストサーバー側で吸収できる複雑さは、アプリ本体の仕様に持ち込まないでください。例として、テスト用バージョン `9999.0.0`（`src/domain/updateDownload.ts` で定義、テスト文脈でのみ使用）、GitHub Releases API からの最新 `*-dev` prerelease 選択、asset proxy は test server 側に閉じ込めます。
-- CI では `CI=true` など GitHub Actions の標準環境を活用し、AivisSpeech 固有のテスト用環境変数を増やす前に代替できないか確認してください。
+- 自動アップデート機能はユーザーの更新適用率に直結するため、実際の通知表示・ダウンロード・インストーラー起動に近い経路を優先して検証してください。
+- 現在は `electron-updater` は使用せず、独自の HTTP ダウンロード実装を採用しています。`electron-updater` へ寄せる変更は、Windows NSIS 周辺や CI を大きく変える可能性があるため、簡単な置換として扱わないでください。
+- テスト用の複雑さ（テスト用のバージョン番号、GitHub Releases API からの prerelease 選択、asset proxy など）はアプリ本体の仕様に持ち込まず、テストサーバー側に閉じ込めてください。
+- 検証用の入口となる環境変数は増やしすぎないことを優先してください。GitHub Actions の標準的な環境変数で代替できないか、まず検討してください。
 
-## Electron 境界
+## Electron の境界
 
-- renderer、preload、main process の境界を必ず確認します。packaged renderer で Node globals が使えるとは限りません。
-- OS / arch 判定、ファイルシステム操作、外部プロセス起動、shell open は main process または preload 経由に寄せるのが基本です。
-- browser build の sandbox stub は、未対応機能を投げることがあります。backend stub があるだけで十分と考えず、UI 側で未対応 action を出していないか確認してください。
-- IPC を増やす場合は、`src/type/ipc.ts`、preload 型、browser sandbox、Electron preload、main handler の整合を確認します。
+- renderer、preload、main process の境界を必ず確認してください。packaged app の renderer では Node.js のグローバルオブジェクトが使えるとは限りません。
+- OS / arch の判定、ファイルシステム操作、外部プロセスの起動、shell open は main process または preload 経由に寄せるのが基本です。
+- browser build の sandbox stub は、未対応の機能に対して例外を投げることがあります。backend stub があるだけで十分と考えず、UI 側で未対応の action を出していないか確認してください。
+- IPC を追加する場合は、`src/type/ipc.ts`、preload 型、browser sandbox、Electron preload、main handler の整合を確認してください。
 
 ## コーディング
 
-- 既存のスタイルを優先します。TypeScript / Vue では周辺の import 順、命名、コメント量、Quasar component の書き方に合わせてください。
-- 文字列リテラルは周辺がダブルクォートならダブルクォート、シングルクォートならシングルクォートに合わせます。この repo では TypeScript 側にダブルクォートが多くあります。
-- utility 関数を追加する場合は JSDoc / TSDoc を書きます。引数と戻り値が読める粒度にしてください。
-- ログメッセージは英語で書きます。ユーザー向け UI 文言やコメントは既存の日本語表現に合わせます。
-- acronym は表記を崩さないでください。`E2E`、`CI`、`API`、`DMG` などを `E2e` のように書かないでください。
-- script 名や job 名は既存の命名順に合わせます。新しい名前を足す前に `package.json` と workflow 内の既存 pattern を確認してください。
-- 過剰な一般化を避けます。1 つの検証専用処理に複数の環境変数、抽象化、設定層を足す前に、1 つの入口で足りないか確認してください。
+- 既存のスタイルを優先してください。TypeScript / Vue では周辺の import 順、命名、コメント量、Quasar コンポーネントの書き方に合わせてください。
+- この repo では、upstream (VOICEVOX) の慣習に合わせて文字列リテラルにダブルクォートを使用しており、eslint でも `@stylistic/quotes: ["error", "double"]` として強制されています。インデントは 2 スペースで、こちらも eslint で強制されています。
+- ユーティリティ関数を追加する場合は JSDoc / TSDoc を書いてください。引数と戻り値の型が読み取れる粒度にしてください。
+- ログメッセージは英語で書いてください。ユーザー向け UI 文言やコメントは既存の日本語表現に合わせてください。
+- 略語の表記を崩さないでください。`E2E`、`CI`、`API`、`DMG` などを `E2e` のように書かないでください。
+- スクリプト名や job 名は既存の命名規則に合わせてください。新しい名前を追加する前に `package.json` と workflow 内の既存のパターンを確認してください。
+- 過剰な一般化を避けてください。1 つの検証専用処理に複数の環境変数、抽象化、設定層を追加する前に、1 つの入口で足りないかを確認してください。
 
 ## ドキュメント
 
-- README や docs の多くは upstream 由来で、AivisSpeech の現状と一致しない箇所があります。ドキュメントだけを根拠に実装判断をしないでください。
-- ただし README の「開発方針」は、この repo の重要な前提です。upstream 追従、削除回避、テストの扱いに関する判断では必ず尊重してください。
-- ドキュメント更新が必要な場合は、AivisSpeech 固有の最新情報として追加するのか、upstream 由来文書に手を入れるのかを分けて考えてください。
+- README や docs の多くは upstream 由来であり、AivisSpeech の現状と一致しない箇所があります。ドキュメントだけを根拠に実装判断をしないでください。
+- ただし README の「開発方針」セクションは、このリポジトリの重要な前提です。upstream 追従、削除回避、テストの扱いに関する判断では必ず尊重してください。
+- ドキュメントの更新が必要な場合は、AivisSpeech 固有の最新情報として追加するのか、upstream 由来の文書に手を入れるのかを分けて考えてください。
 
 ## 依存関係と外部情報
 
-- 依存関係のバージョンや build tool の変更は、必要性を確認してから最小限にします。
+- 依存関係のバージョンやビルドツールの変更は、必要性を確認してから最小限にしてください。
 - GitHub Actions、Electron、Playwright、electron-builder などの挙動が原因に見える問題は、最新の公式情報や現行コードを確認してから判断してください。
-- AivisSpeech Engine との連携が絡む場合は、editor 側だけで完結していると決めつけず、Engine artifact、配置先、起動パス、CI の download action を確認します。
 
 ## 作業後の確認
 
-- 変更対象に対応する最小の script をまず実行します。
-- updater 関連なら、少なくとも `pnpm run test-updater:unit` の対象に入るべき unit test が漏れていないか確認してください。
-- 型境界や preload / IPC を触った場合は `pnpm run typecheck` を実行します。
-- lint 対象が明確なら、全体 lint の前に対象ファイルへ `pnpm exec eslint <files>` を実行します。
+- 変更対象に対応する最小のスクリプトをまず実行してください。
+- 特定機能向けの narrow test script（`test-updater:unit` など）がある場合は、追加したテストがその script に含まれるべきかを確認してください。
+- 型の境界や preload / IPC を変更した場合は `pnpm run typecheck` を実行してください。
+- lint 対象が明確な場合は、全体 lint の前に対象ファイルに対して `pnpm exec eslint <files>` を実行してください。
 - 実行できない検証がある場合は、コマンド、失敗理由、環境制限か実装不具合かを区別して報告してください。
