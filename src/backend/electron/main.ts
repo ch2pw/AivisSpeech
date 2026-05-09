@@ -265,12 +265,26 @@ function checkMultiEngineEnabled(): boolean {
   return enabled;
 }
 
+/**
+ * Node.js / Electron の inspect 用引数かどうかを判定する。
+ * @param arg コマンドライン引数
+ * @returns inspect 用引数の場合は true
+ */
+function isInspectArg(arg: string): boolean {
+  return (
+    arg === "--inspect" ||
+    arg.startsWith("--inspect=") ||
+    arg === "--inspect-brk" ||
+    arg.startsWith("--inspect-brk=")
+  );
+}
+
 /** コマンドライン引数を取得する */
 function getArgv(): string[] {
   // 製品版でmacOS以外の場合、引数はargv[1]以降をそのまま
   if (isProduction) {
     if (!isMac) {
-      return process.argv.slice(1);
+      return process.argv.slice(1).filter((arg) => !isInspectArg(arg));
     }
   }
   // 開発版の場合、引数は`--`がある場合は`--`以降、無い場合は引数なしとして扱う
