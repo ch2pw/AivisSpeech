@@ -1,9 +1,9 @@
 import http from "node:http";
 import path from "node:path";
-import { Readable } from "node:stream";
-import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { UPDATE_TEST_VERSION } from "../src/domain/updateDownload.ts";
@@ -176,37 +176,33 @@ function createAttachmentContentDisposition(fileName: string): string {
 }
 
 /**
- * HTTP ハンドラー内で発生した例外を安全に HTTP レスポンスへ反映する。
- * @param response HTTP レスポンス
+ * 例外を HTTP レスポンス本文に利用できる文字列へ変換する。
  * @param error 発生した例外
+ * @returns レスポンス本文として返すエラー文字列
  */
-function respondInternalServerError(
-  response: http.ServerResponse,
-  error: unknown,
-): void {
-  console.error(error);
-
-  if (response.headersSent === true) {
-    if (response.writableEnded === false) {
-      response.destroy(error instanceof Error ? error : undefined);
-    }
-    return;
+function formatErrorForResponse(error: unknown): string {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
   }
 
-  if (response.writableEnded === true) {
-    return;
+  if (typeof error === "string") {
+    return error;
   }
 
-  response.writeHead(500);
-  response.end(String(error));
+  const serializedError = JSON.stringify(error);
+  return serializedError ?? "Unknown error";
 }
 
 /**
- * updateInfos.json を返す。
- * @param response HTTP レスポンス
+ * updateInfos.json のレスポンスとして返す更新情報を生成する。
+ * @returns updateInfos.json の内容
  */
-function respondUpdateInfos(response: http.ServerResponse): void {
-  const updateInfos = [
+function createUpdateInfos(): Array<{
+  version: string;
+  descriptions: string[];
+  contributors: string[];
+}> {
+  return [
     {
       version: UPDATE_TEST_VERSION,
       descriptions: [
@@ -215,24 +211,18 @@ function respondUpdateInfos(response: http.ServerResponse): void {
       contributors: [],
     },
   ];
-
-  response.writeHead(200, {
-    "Content-Type": "application/json; charset=utf-8",
-  });
-  response.end(JSON.stringify(updateInfos));
 }
 
 /**
  * GitHub Releases の実アセットをプロキシする。
  * @param context update-test-server の実行コンテキスト
  * @param requestedFileName テスト対象アプリから要求されたファイル名
- * @param response HTTP レスポンス
+ * @returns GitHub Releases の実アセットを返すレスポンス
  */
 async function proxyReleaseAsset(
   context: UpdateTestServerContext,
   requestedFileName: string,
-  response: http.ServerResponse,
-): Promise<void> {
+): Promise<Response> {
   const asset = await resolveReleaseAsset(context, requestedFileName);
   console.log(`Proxying release asset: ${asset.name}`);
 
@@ -249,31 +239,31 @@ async function proxyReleaseAsset(
     );
   }
 
-  const responseHeaders: http.OutgoingHttpHeaders = {
+  const responseHeaders = new Headers({
     "Content-Disposition": createAttachmentContentDisposition(requestedFileName),
     "Content-Type":
       assetResponse.headers.get("content-type") ??
       "application/octet-stream",
-  };
+  });
   const contentLength = assetResponse.headers.get("content-length");
   if (contentLength != null) {
-    responseHeaders["Content-Length"] = contentLength;
+    responseHeaders.set("Content-Length", contentLength);
   }
 
-  response.writeHead(assetResponse.status, responseHeaders);
-  Readable.fromWeb(
-    assetResponse.body as unknown as NodeReadableStream<Uint8Array>,
-  ).pipe(response);
+  return new Response(assetResponse.body, {
+    headers: responseHeaders,
+    status: assetResponse.status,
+  });
 }
 
 /**
- * updater E2E / 手動検証向けの HTTP サーバーを生成する。
+ * updater E2E / 手動検証向けの Hono アプリケーションを生成する。
  * @param options update-test-server の起動オプション
- * @returns 起動前の HTTP サーバー
+ * @returns update-test-server の Hono アプリケーション
  */
-export function createUpdateTestServer(
+export function createUpdateTestApp(
   options: UpdateTestServerOptions = {},
-): http.Server {
+): Hono {
   const context: UpdateTestServerContext = {
     repo: options.repo ?? defaultRepo,
     githubApiHeaders: createGithubApiHeaders(
@@ -282,38 +272,32 @@ export function createUpdateTestServer(
     latestDevReleaseCache: undefined,
   };
 
-  return http.createServer((request, response) => {
-    void (async () => {
-      try {
-        const requestUrl = new URL(request.url ?? "/", "http://localhost");
+  const app = new Hono();
 
-        if (request.method !== "GET") {
-          response.writeHead(405);
-          response.end("Method Not Allowed");
-          return;
-        }
-
-        if (requestUrl.pathname === "/updateInfos.json") {
-          respondUpdateInfos(response);
-          return;
-        }
-
-        const assetPathPrefix = `/${UPDATE_TEST_VERSION}/`;
-        if (requestUrl.pathname.startsWith(assetPathPrefix)) {
-          const requestedFileName = decodeURIComponent(
-            requestUrl.pathname.slice(assetPathPrefix.length),
-          );
-          await proxyReleaseAsset(context, requestedFileName, response);
-          return;
-        }
-
-        response.writeHead(404);
-        response.end("Not Found");
-      } catch (error) {
-        respondInternalServerError(response, error);
-      }
-    })();
+  app.onError((error, honoContext) => {
+    console.error(error);
+    return honoContext.text(formatErrorForResponse(error), 500);
   });
+
+  app.get("/updateInfos.json", (honoContext) => {
+    return honoContext.json(createUpdateInfos());
+  });
+
+  app.get(`/${UPDATE_TEST_VERSION}/:requestedFileName`, async (honoContext) => {
+    return await proxyReleaseAsset(
+      context,
+      honoContext.req.param("requestedFileName"),
+    );
+  });
+
+  app.all("*", (honoContext) => {
+    if (honoContext.req.method === "GET") {
+      return honoContext.text("Not Found", 404);
+    }
+    return honoContext.text("Method Not Allowed", 405);
+  });
+
+  return app;
 }
 
 /**
@@ -326,20 +310,25 @@ export async function startUpdateTestServer(
 ): Promise<http.Server> {
   const host = options.host ?? defaultHost;
   const port = options.port ?? defaultPort;
-  const server = createUpdateTestServer(options);
+  const app = createUpdateTestApp(options);
 
-  await new Promise<void>((resolve, reject) => {
+  return await new Promise<http.Server>((resolve, reject) => {
+    const server = serve(
+      {
+        fetch: app.fetch,
+        hostname: host,
+        port,
+      },
+      () => {
+        server.off("error", reject);
+        console.log(
+          `AivisSpeech update test server is listening. url: http://${host}:${port}`,
+        );
+        resolve(server as http.Server);
+      },
+    );
     server.once("error", reject);
-    server.listen(port, host, () => {
-      server.off("error", reject);
-      console.log(
-        `AivisSpeech update test server is listening. url: http://${host}:${port}`,
-      );
-      resolve();
-    });
   });
-
-  return server;
 }
 
 /**

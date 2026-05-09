@@ -141,6 +141,9 @@ importers:
       '@eslint/js':
         specifier: 9.21.0
         version: 9.21.0
+      '@hono/node-server':
+        specifier: 2.0.2
+        version: 2.0.2(hono@4.12.18)
       '@openapitools/openapi-generator-cli':
         specifier: 2.17.0
         version: 2.17.0(encoding@0.1.13)
@@ -288,6 +291,9 @@ importers:
       happy-dom:
         specifier: 20.0.2
         version: 20.0.2
+      hono:
+        specifier: 4.12.18
+        version: 4.12.18
       license-checker-rseidelsohn:
         specifier: 4.4.2
         version: 4.4.2
@@ -1131,6 +1137,12 @@ packages:
     resolution: {integrity: sha512-kGUnCI+Z5lBeCKd7rzgU7UoFU8Q0EkJfh17SgeyAyx8cLdISqeq54BNJKZrME3WXersoigLZVJ1GLs0buYD3lA==}
     peerDependencies:
       vue: '>= 3.2.26 < 4.0.0'
+
+  '@hono/node-server@2.0.2':
+    resolution: {integrity: sha512-tXlTi1h/4V7sDe7i97IVP+9re9ZU7wXZZggnR5ucCRclf1+AX6YhGStrR5w8bLj+3Mlyl0pKfBh9gqTqqnGKfQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -4037,6 +4049,10 @@ packages:
 
   headers-polyfill@4.0.3:
     resolution: {integrity: sha512-IScLbePpkvO846sIwOtOTDjutRMWdXdJmXdMvk6gCBHxFO8d+QKOQedyZSxFTTFYRSmlgSTDtXqqq4pcenBXLQ==}
+
+  hono@4.12.18:
+    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
+    engines: {node: '>=16.9.0'}
 
   hosted-git-info@4.1.0:
     resolution: {integrity: sha512-kyCuEOWjJqZuDbRHzL8V93NzQhwIB71oFWSyzVo+KPZI+pnQPPxucdkrOZvkLRnrf5URsQM+IJ09Dw29cRALIA==}
@@ -7456,6 +7472,10 @@ snapshots:
       vue: 3.5.13(typescript@5.8.2)
     optionalDependencies:
       vue-router: 4.6.4(vue@3.5.13(typescript@5.8.2))
+
+  '@hono/node-server@2.0.2(hono@4.12.18)':
+    dependencies:
+      hono: 4.12.18
 
   '@humanfs/core@0.19.1': {}
 
@@ -10884,6 +10904,8 @@ snapshots:
   he@1.2.0: {}
 
   headers-polyfill@4.0.3: {}
+
+  hono@4.12.18: {}
 
   hosted-git-info@4.1.0:
     dependencies:
