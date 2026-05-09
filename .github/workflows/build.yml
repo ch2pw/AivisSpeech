@@ -495,6 +495,22 @@ jobs:
 
           "$seven_zip" x ./*.zip
 
+      - name: Configure updater E2E environment
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            engine_execution_file_path="AivisSpeech-Engine/run.exe"
+            test -f "AivisSpeech/AivisSpeech-Engine/run.exe"
+          else
+            engine_execution_file_path="../Resources/AivisSpeech-Engine/run"
+            test -f "AivisSpeech/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
+            test -x "AivisSpeech/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
+          fi
+
+          sed \
+            "s|\"executionFilePath\": \"../AivisSpeech-Engine/run.exe\"|\"executionFilePath\": \"${engine_execution_file_path}\"|" \
+            .env.test > .env.test.tmp
+          mv .env.test.tmp .env.test
+
       - name: Run updater E2E
         env:
           GITHUB_TOKEN: ${{ github.token }}
