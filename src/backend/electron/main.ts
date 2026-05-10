@@ -266,17 +266,13 @@ function checkMultiEngineEnabled(): boolean {
 }
 
 /**
- * Node.js / Electron の inspect 用引数かどうかを判定する。
- * @param arg コマンドライン引数
- * @returns inspect 用引数の場合は true
+ * AivisSpeech の起動時に直接開けるファイルかどうかを判定する。
+ * Electron / Chromium の起動オプションや未対応ファイルは、初期ファイルパスとして扱わない。
+ * @param filePath コマンドライン引数として渡されたファイルパス
+ * @returns 起動時に直接処理できるファイルの場合は true
  */
-function isInspectArg(arg: string): boolean {
-  return (
-    arg === "--inspect" ||
-    arg.startsWith("--inspect=") ||
-    arg === "--inspect-brk" ||
-    arg.startsWith("--inspect-brk=")
-  );
+function isSupportedInitialFilePath(filePath: string): boolean {
+  return path.extname(filePath) === ".aisp" || isVvppFile(filePath);
 }
 
 /** コマンドライン引数を取得する */
@@ -284,7 +280,7 @@ function getArgv(): string[] {
   // 製品版でmacOS以外の場合、引数はargv[1]以降をそのまま
   if (isProduction) {
     if (!isMac) {
-      return process.argv.slice(1).filter((arg) => !isInspectArg(arg));
+      return process.argv.slice(1);
     }
   }
   // 開発版の場合、引数は`--`がある場合は`--`以降、無い場合は引数なしとして扱う
@@ -297,7 +293,9 @@ function getArgv(): string[] {
   return [];
 }
 
-let initialFilePath: string | undefined = getArgv()[0]; // TODO: カプセル化する
+let initialFilePath: string | undefined = getArgv().find(
+  isSupportedInitialFilePath,
+); // TODO: カプセル化する
 
 const menuTemplateForMac: Electron.MenuItemConstructorOptions[] = [
   {

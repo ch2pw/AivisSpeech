@@ -4,6 +4,7 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { UPDATE_TEST_VERSION } from "../src/domain/updateDownload.ts";
@@ -273,6 +274,14 @@ export function createUpdateTestApp(
   };
 
   const app = new Hono();
+  app.use(
+    "*",
+    cors({
+      origin: "*",
+      allowMethods: ["GET", "OPTIONS"],
+      exposeHeaders: ["Content-Disposition", "Content-Length"],
+    }),
+  );
 
   app.onError((error, honoContext) => {
     console.error(error);

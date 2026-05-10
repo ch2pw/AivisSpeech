@@ -489,27 +489,34 @@ jobs:
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             seven_zip="vendored/7z/7za.exe"
+            app_artifact_path="dist_electron/win-unpacked"
+          elif [ "${{ runner.arch }}" = "ARM64" ]; then
+            seven_zip="vendored/7z/7zz"
+            app_artifact_path="dist_electron/mac-arm64"
           else
             seven_zip="vendored/7z/7zz"
+            app_artifact_path="dist_electron/mac"
           fi
 
-          "$seven_zip" x ./*.zip
+          mkdir -p "$app_artifact_path"
+          "$seven_zip" x ./*.zip -o"$app_artifact_path"
+          mv "$app_artifact_path"/AivisSpeech/* "$app_artifact_path"/
 
-      - name: Configure updater E2E environment
+      - name: Verify AivisSpeech app artifact
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
-            engine_execution_file_path="AivisSpeech-Engine/run.exe"
-            test -f "AivisSpeech/AivisSpeech-Engine/run.exe"
+            test -f "dist_electron/win-unpacked/AivisSpeech.exe"
+            test -f "dist_electron/win-unpacked/AivisSpeech-Engine/run.exe"
           else
-            engine_execution_file_path="../Resources/AivisSpeech-Engine/run"
-            test -f "AivisSpeech/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
-            test -x "AivisSpeech/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
+            if [ "${{ runner.arch }}" = "ARM64" ]; then
+              app_artifact_path="dist_electron/mac-arm64"
+            else
+              app_artifact_path="dist_electron/mac"
+            fi
+            test -x "$app_artifact_path/AivisSpeech.app/Contents/MacOS/AivisSpeech"
+            test -f "$app_artifact_path/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
+            test -x "$app_artifact_path/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
           fi
-
-          sed \
-            "s|\"executionFilePath\": \"../AivisSpeech-Engine/run.exe\"|\"executionFilePath\": \"${engine_execution_file_path}\"|" \
-            .env.test > .env.test.tmp
-          mv .env.test.tmp .env.test
 
       - name: Run updater E2E
         env:
