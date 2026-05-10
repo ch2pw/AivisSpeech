@@ -159,6 +159,7 @@ const builderOptions = {
         arch: [isArm64 ? "arm64" : "x64"],
       },
     ],
+    identity: null, // ad-hoc 署名をしない
   },
   dmg: {
     icon: "public/icon-dmg.icns",
