@@ -39,13 +39,11 @@
         <!-- totalBytes が不明（0 以下）の場合は indeterminate モードで表示 -->
         <QLinearProgress
           :value="downloadProgressRatio"
-          :indeterminate="
-            props.downloadProgress == null ||
-            props.downloadProgress.totalBytes <= 0
-          "
+          :indeterminate="isDownloadProgressIndeterminate"
           color="primary"
           trackColor="surface"
           rounded
+          instantFeedback
         />
         <div class="text-body2 text-grey q-mt-sm">
           {{ downloadProgressText }}
@@ -268,7 +266,24 @@ const downloadProgressRatio = computed(() => {
     return 0;
   }
 
-  return props.downloadProgress.downloadedBytes / props.downloadProgress.totalBytes;
+  return Math.min(
+    Math.max(
+      props.downloadProgress.downloadedBytes / props.downloadProgress.totalBytes,
+      0,
+    ),
+    1,
+  );
+});
+
+/**
+ * ダウンロード進捗を determinate / indeterminate のどちらで表示するか。
+ * totalBytes が不明な間は indeterminate にし、値が分かったら実際の比率を即時反映する。
+ */
+const isDownloadProgressIndeterminate = computed(() => {
+  return (
+    props.downloadProgress == null ||
+    props.downloadProgress.totalBytes <= 0
+  );
 });
 
 /**
