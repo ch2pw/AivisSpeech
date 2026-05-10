@@ -462,6 +462,7 @@ jobs:
   ## テスト用 CI に実装すると別途ビルドを回す必要が出てきて処理が重複するため、このビルド用 CI にて実装している
   test-updater-e2e:
     needs: [build-and-upload]
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
