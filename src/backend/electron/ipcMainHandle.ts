@@ -11,6 +11,7 @@ import { getEngineInfoManager } from "./manager/engineInfoManager";
 import { getEngineProcessManager } from "./manager/engineProcessManager";
 import { getWindowManager } from "./manager/windowManager";
 import { UpdateManager } from "./updateManager";
+import { createLogger } from "@/helpers/log";
 import {
   getCurrentUpdatePlatform,
   resolveUpdateInfosUrl,
@@ -24,6 +25,8 @@ import {
   SystemError,
   TextAsset,
 } from "@/type/preload";
+
+const log = createLogger("IpcMainHandle");
 
 // エンジンのフォルダを開く
 function openEngineDirectory(engineId: EngineId) {
@@ -460,6 +463,12 @@ export function getIpcMainHandle(params: {
         const childProcess = spawn(installerPath, [], {
           detached: true,
           stdio: "ignore",
+        });
+        log.info(
+          `Launched update installer. path: ${installerPath}, pid: ${childProcess.pid}`,
+        );
+        childProcess.on("error", (error) => {
+          log.error("Failed to launch update installer:", error);
         });
         // 親プロセスの終了を待たないように参照を切る
         childProcess.unref();

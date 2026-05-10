@@ -36,8 +36,8 @@ const INITIAL_OR_UPDATE_DIALOG_POLL_INTERVAL_MS = 500;
 const WINDOWS_INSTALLER_CLICK_TIMEOUT_MS = 30 * 1000;
 /** Windows インストーラーのプロセス出現を待つ上限時間 (ms) */
 const WINDOWS_INSTALLER_PROCESS_TIMEOUT_MS = 60 * 1000;
-/** CI の初回起動ダイアログを抑制するために保存する設定ファイルの migrations version */
-const E2E_CONFIG_MIGRATION_VERSION = "1.1.0";
+/** CI の初回起動ダイアログを抑制するために保存する設定ファイルのマイグレーションバージョン */
+const E2E_CONFIG_MIGRATION_VERSION = "1.2.0";
 
 test.describe.configure({ mode: "serial" });
 
@@ -342,99 +342,33 @@ async function completeInitialDialogsIfNeeded(page: Page): Promise<void> {
 }
 
 /**
- * PowerShell の JSON 出力から Windows のプロセス ID 一覧を取得する。
- * @param stdout PowerShell が出力した JSON 文字列
- * @returns Windows のプロセス ID 一覧
- */
-function parseWindowsProcessIds(stdout: string): number[] {
-  const trimmedStdout = stdout.trim();
-  if (trimmedStdout === "") {
-    return [];
-  }
-
-  const parsedProcessIds: unknown = JSON.parse(trimmedStdout);
-  const processIds = Array.isArray(parsedProcessIds)
-    ? parsedProcessIds
-    : [parsedProcessIds];
-
-  return processIds
-    .map((processId) => Number(processId))
-    .filter((processId) => Number.isInteger(processId) && processId > 0);
-}
-
-/**
- * Windows インストーラーのファイル名を含むプロセス ID 一覧を取得する。
- * @param installerFileName インストーラーのファイル名
- * @returns インストーラーとして起動された可能性がある Windows プロセスの ID 一覧
- */
-async function findWindowsInstallerProcessIds(
-  installerFileName: string,
-): Promise<number[]> {
-  const installerProcessName = path.basename(
-    installerFileName,
-    path.extname(installerFileName),
-  );
-  const powershellResult = await execFileAsync("powershell", [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-Command",
-    [
-      "$installerFileName = $args[0]",
-      "$installerProcessName = $args[1]",
-      "Get-CimInstance Win32_Process",
-      "| Where-Object {",
-      "  ($_.ExecutablePath -ne $null -and $_.ExecutablePath.Contains($installerFileName))",
-      "  -or ($_.CommandLine -ne $null -and $_.CommandLine.Contains($installerFileName))",
-      "  -or ($_.Name -ne $null -and $_.Name.Contains($installerProcessName))",
-      "}",
-      "| Select-Object -ExpandProperty ProcessId",
-      "| ConvertTo-Json -Compress",
-    ].join(" "),
-    installerFileName,
-    installerProcessName,
-  ]).catch(() => undefined);
-
-  if (powershellResult == null) {
-    return [];
-  }
-
-  return parseWindowsProcessIds(powershellResult.stdout);
-}
-
-/**
- * Windows インストーラーのプロセス出現を待機してから終了する。
+ * Windows インストーラーの起動イベントを待機してから終了する。
  * @param installerFileName インストーラーのファイル名
  */
 async function waitAndKillWindowsInstaller(
   installerFileName: string,
 ): Promise<void> {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < WINDOWS_INSTALLER_PROCESS_TIMEOUT_MS) {
-    const installerProcessIds =
-      await findWindowsInstallerProcessIds(installerFileName);
+  const helperScriptPath = path.resolve(
+    "tests",
+    "e2e",
+    "electron",
+    "wait-and-kill-windows-installer.ps1",
+  );
+  const powershellResult = await execFileAsync("powershell", [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    helperScriptPath,
+    "-InstallerFileName",
+    installerFileName,
+    "-TimeoutSeconds",
+    String(Math.ceil(WINDOWS_INSTALLER_PROCESS_TIMEOUT_MS / 1000)),
+  ]);
 
-    if (installerProcessIds.length > 0) {
-      console.log(
-        `Detected Windows installer process. fileName: ${installerFileName}, processIds: ${installerProcessIds.join(", ")}`,
-      );
-      await Promise.all(
-        installerProcessIds.map((processId) =>
-          execFileAsync("taskkill", [
-            "/F",
-            "/T",
-            "/PID",
-            String(processId),
-          ]).catch(() => undefined),
-        ),
-      );
-      return;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  throw new Error(`Failed to detect installer process: ${installerFileName}`);
+  console.log(
+    `Detected Windows installer launch. result: ${powershellResult.stdout.trim()}`,
+  );
 }
 
 /**
